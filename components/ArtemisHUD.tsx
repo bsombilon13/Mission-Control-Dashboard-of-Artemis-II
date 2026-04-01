@@ -1,6 +1,7 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { TelemetryData } from '../types';
+import ArtemisModel3D from './ArtemisModel3D';
 
 interface Props {
   elapsedSeconds: number;
@@ -108,18 +109,6 @@ const ArtemisHUD: React.FC<Props> = ({ elapsedSeconds, telemetry, hideContainer 
     return Math.min(60, scale);
   }, [velocity, atmosphereDensity, isAscent, isReturn, isMaxQ]);
 
-  const thrustParticles = useMemo(() => {
-    if (!isAscent && !isICPSActive) return [];
-    return Array.from({ length: 32 }).map((_, i) => ({
-      id: i,
-      left: 15 + (i * 9) % 70,
-      delay: (i * 0.04) % 1.2,
-      duration: 0.2 + (i * 0.03) % 0.6,
-      scale: 0.2 + (i % 5) * 0.5,
-      opacity: 0.3 + (i % 3) * 0.4
-    }));
-  }, [isAscent, isICPSActive]);
-
   return (
     <div className={`relative h-full w-full flex items-center justify-center overflow-hidden transition-all duration-700 ${hideContainer ? 'bg-transparent' : 'glass rounded-xl p-4 border border-slate-800 bg-slate-950/40 min-h-[400px]'}`}>
       
@@ -187,232 +176,31 @@ const ArtemisHUD: React.FC<Props> = ({ elapsedSeconds, telemetry, hideContainer 
         </div>
       )}
 
-      {/* ROCKET VIEWPORT - High frequency transformation for shake */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
-        style={{ 
-          transform: `translate(${shakeX}px, ${shakeY}px)`,
-          perspective: '2000px'
-        }}
-      >
-        <div 
-          className="relative transition-all duration-700 ease-out scale-[0.45] sm:scale-[0.55] md:scale-[0.6] lg:scale-[0.5] xl:scale-[0.6]"
-          style={{ 
-            filter: distortionScale > 3 ? 'url(#heatHaze)' : 'none',
-            backdropFilter: aeroStress > 10 ? `blur(${Math.min(2, aeroStress / 50)}px)` : 'none'
-          }}
-        >
-          {/* Main Assembly Container with fixed dimensions for consistent labeling */}
-          <div className="relative w-64 h-[500px] flex flex-col items-center justify-center preserve-3d transition-transform duration-[1500ms] ease-out-expo" style={{ transform: `rotateX(${pitchAngle}deg)`, transformStyle: 'preserve-3d' }}>
-            
-            {/* ORION ASSEMBLY */}
-            <div 
-              className="relative preserve-3d transition-all duration-[3500ms] z-30"
-              style={{
-                transform: isOrionSeparated 
-                  ? 'translateZ(300px) translateY(-400px) rotateX(15deg) scale(1.1)' 
-                  : 'none'
-              }}
-            >
-              
-              {/* Launch Abort System */}
-              <div 
-                className="absolute bottom-[98%] left-1/2 -translate-x-1/2 preserve-3d transition-all duration-[2800ms]"
-                style={{
-                  transform: isLASJettisoned 
-                    ? 'translateY(-2000px) rotateX(180deg) scale(1.5)' 
-                    : 'none',
-                  opacity: isLASJettisoned ? 0 : 1
-                }}
-              >
-                 <div className="w-3 h-24 bg-gradient-to-r from-slate-400 via-white to-slate-400 border-x border-slate-500/30 mx-auto relative">
-                    <div className="w-full h-6 bg-slate-200" style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }}></div>
-                 </div>
-                 <div className="relative w-16 h-10 preserve-3d -mt-1">
-                    <div className="absolute inset-0 bg-slate-200 border border-slate-400" style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' }}></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-                 </div>
-              </div>
+      {/* 3D VEHICLE MODEL */}
+      <Suspense fallback={<div className="text-blue-500 mono text-[10px] animate-pulse">INITIALIZING 3D ENGINE...</div>}>
+        <ArtemisModel3D 
+          elapsedSeconds={elapsedSeconds}
+          pitchAngle={pitchAngle}
+          isBoosterSeparated={isBoosterSeparated}
+          isLASJettisoned={isLASJettisoned}
+          isCoreSeparated={isCoreSeparated}
+          isOrionSeparated={isOrionSeparated}
+          isSolarArrayDeployed={isSolarArrayDeployed}
+          isAscent={isAscent}
+          isICPSActive={isICPSActive}
+          isReturn={isReturn}
+          shakeX={shakeX}
+          shakeY={shakeY}
+        />
+      </Suspense>
 
-              {/* Orion Capsule */}
-              <div className={`w-16 h-14 bg-slate-50 mx-auto relative z-10 transition-all duration-1000 overflow-hidden ${isOrionSepFlash ? 'brightness-200 scale-125 shadow-[0_0_100px_#fff]' : ''} ${isOrbit && !isReturn ? 'shadow-[0_0_40px_rgba(59,130,246,0.4)]' : ''}`} style={{ clipPath: 'polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%)' }}>
-                 <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-black/30"></div>
-                 
-                 {/* STARLIGHT REFLECTION - Orion Capsule */}
-                 {isDeepSpace && (
-                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[starlightSweep_12s_ease-in-out_infinite] pointer-events-none"></div>
-                 )}
-
-                 {isOrbit && (
-                   <>
-                     <div className="absolute inset-0 bg-blue-400/5 animate-pulse"></div>
-                     <div className="absolute top-2 left-2 w-1 h-1 bg-green-400 rounded-full animate-blink-fast shadow-[0_0_5px_#4ade80]"></div>
-                     <div className="absolute top-2 right-2 w-1 h-1 bg-red-400 rounded-full animate-blink-slow shadow-[0_0_5px_#f87171]"></div>
-                   </>
-                 )}
-
-                 {isReturn && (
-                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-900/40 to-red-600/60 shadow-[inset_0_-15px_30px_rgba(255,0,0,0.6),0_5px_30px_rgba(255,60,0,0.8)] border-b-2 border-red-500/50"></div>
-                 )}
-
-                 {isPreLaunch && (
-                   <div className="absolute -left-2 top-2 w-8 h-4 bg-white/10 blur-md animate-venting rotate-12"></div>
-                 )}
-
-                 <div className="absolute top-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                   <div className="w-3 h-2 bg-slate-900/90 rounded-sm"></div>
-                   <div className="w-3 h-2 bg-slate-900/90 rounded-sm"></div>
-                 </div>
-              </div>
-
-              {/* Solar Arrays */}
-              {isSolarArrayDeployed && (
-                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-0 h-0 preserve-3d">
-                  {[0, 90, 180, 270].map((angle) => (
-                    <div key={angle} className="absolute top-0 left-0 w-48 h-12 bg-blue-800/90 border border-blue-400/60 transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.1)]" style={{ transformOrigin: 'left center', transform: `rotateY(${angle}deg) rotateX(15deg) scaleX(${Math.min(1, (elapsedSeconds - 13455) / 15)})`, clipPath: 'polygon(0% 20%, 98% 0%, 100% 100%, 0% 80%)' }}>
-                      <div className="w-full h-full bg-[linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:10px_100%] opacity-40"></div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-sweep"></div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ICPS */}
-            <div 
-              className="transition-all duration-[4500ms] ease-out-expo z-20"
-              style={{
-                transform: isOrionSeparated 
-                  ? 'translateZ(300px) translateY(400px) rotateX(-45deg)' 
-                  : isCoreSeparated 
-                    ? 'translateY(-60px)' 
-                    : 'none',
-                opacity: isOrionSeparated ? 0.1 : 1,
-                filter: isOrionSeparated ? 'blur(8px)' : 'none'
-              }}
-            >
-               <div className="w-18 h-28 bg-gradient-to-r from-slate-300 via-white to-slate-300 border-x border-slate-400/30 mx-auto relative -mt-1 shadow-xl">
-                  <div className="absolute bottom-0 w-full h-12 bg-slate-400/50" style={{ clipPath: 'polygon(0% 0%, 100% 0%, 80% 100%, 20% 100%)' }}></div>
-                  {isICPSActive && !isOrionSeparated && (
-                     <div className="absolute -bottom-48 left-1/2 -translate-x-1/2 w-20 h-64">
-                        <div className="w-full h-full bg-gradient-to-b from-blue-400/70 via-blue-700/5 to-transparent blur-2xl animate-pulse"></div>
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-32 bg-cyan-100 blur-lg opacity-60"></div>
-                     </div>
-                  )}
-               </div>
-            </div>
-
-            {/* SLS CORE STAGE & SIDE BOOSTERS */}
-            <div 
-              className="transition-all duration-[5500ms] ease-out-expo z-10"
-              style={{
-                transform: isCoreSeparated 
-                  ? 'translateY(1200px) rotateX(-90deg)' 
-                  : 'none',
-                opacity: isCoreSeparated ? 0 : 1
-              }}
-            >
-              <div className="relative preserve-3d w-24 h-[420px] bg-[#e67e22] mx-auto -mt-1 shadow-2xl border-x border-[#d35400]/50 overflow-hidden">
-                <div className="absolute inset-0 bg-[repeating-linear-gradient(rgba(0,0,0,0.1)_0px,rgba(0,0,0,0.1)_2px,transparent_2px,transparent_8px)] opacity-30"></div>
-                
-                {/* STARLIGHT REFLECTION - Core Stage */}
-                {isDeepSpace && (
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[starlightSweep_15s_ease-in-out_infinite_1s] pointer-events-none"></div>
-                )}
-
-                {isPreLaunch && (
-                  <div className="absolute inset-0 bg-white/5 animate-pulse overflow-hidden">
-                     <div className="absolute top-1/4 left-0 w-full h-20 bg-white/10 blur-xl animate-venting"></div>
-                     <div className="absolute top-2/4 right-0 w-full h-20 bg-white/10 blur-xl animate-venting" style={{ animationDelay: '2s' }}></div>
-                  </div>
-                )}
-
-                {/* SRBs */}
-                <div className="absolute inset-0 preserve-3d">
-                  {[ -1, 1 ].map(side => (
-                    <div 
-                      key={side} 
-                      className="absolute top-28 w-14 h-[350px] bg-white transition-all duration-[6000ms] ease-out-expo"
-                      style={{ 
-                        [side === -1 ? 'right' : 'left']: '105%', 
-                        marginRight: side === -1 ? '-4px' : '0', 
-                        marginLeft: side === 1 ? '-4px' : '0', 
-                        border: '1px solid #ddd', 
-                        boxShadow: side === -1 ? '-5px 0 15px rgba(0,0,0,0.3)' : '5px 0 15px rgba(0,0,0,0.3)',
-                        transform: isBoosterSeparated 
-                          ? `translateX(${side * 600}px) translateY(1000px) rotate(${side * 150}deg)` 
-                          : 'none',
-                        opacity: isBoosterSeparated ? 0 : 1
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-80"></div>
-                      <div className="absolute inset-x-0 top-1/4 h-1 bg-black/20 rotate-12"></div>
-                      <div className="absolute inset-x-0 top-1/2 h-1 bg-black/20 -rotate-12"></div>
-                      <div className="absolute bottom-full left-0 w-full h-14 bg-white" style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }}>
-                         <div className="absolute top-4 left-1/2 -translate-x-1/2 w-5 h-5 bg-black/5 rounded-full"></div>
-                      </div>
-                      {isBoosterSepFlash && <div className="absolute top-4 left-0 right-0 h-8 bg-orange-500 blur-xl animate-ping opacity-70"></div>}
-                      {!isBoosterSeparated && isAscent && (
-                        <div className="absolute -bottom-72 left-1/2 -translate-x-1/2 w-24 h-[450px] z-[-1]">
-                           <div className="w-full h-full bg-gradient-to-b from-orange-400 via-orange-600/30 to-transparent blur-[40px] animate-pulse"></div>
-                           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-80 bg-white/95 blur-xl shadow-[0_0_60px_#fff]"></div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* BOOSTER SEPARATION FLARE */}
-                {isBoosterSepFlash && (
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 z-50 pointer-events-none">
-                    <div className="w-full h-full bg-white rounded-full blur-[60px] animate-ping opacity-90"></div>
-                    <div className="absolute inset-0 w-full h-full bg-orange-400 rounded-full blur-[80px] animate-pulse opacity-60"></div>
-                  </div>
-                )}
-
-                {/* CORE STAGE ENGINE GLOW */}
-                {isAscent && !isCoreSeparated && (
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-32 pointer-events-none z-10">
-                     <div className="w-full h-full bg-gradient-to-t from-orange-500/80 via-yellow-400/40 to-transparent blur-2xl rounded-full animate-[enginePulse_0.15s_infinite]"></div>
-                     <div className="absolute inset-0 w-full h-full bg-white/20 blur-xl rounded-full animate-[enginePulse_0.08s_infinite] scale-75"></div>
-                  </div>
-                )}
-
-                {/* CORE STAGE RS-25 ENGINES */}
-                {isAscent && !isCoreSeparated && (
-                  <div className="absolute -bottom-96 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                    <div className="absolute -top-10 w-48 h-48 bg-blue-500/5 blur-3xl animate-venting scale-150"></div>
-                    <div className="w-40 h-[600px] bg-gradient-to-b from-orange-500/50 via-red-900/10 to-transparent blur-[80px]"></div>
-                    <div className="absolute top-0 w-20 h-96 bg-gradient-to-b from-cyan-400/80 via-blue-600/20 to-transparent blur-3xl animate-pulse opacity-90"></div>
-                    {thrustParticles.map(p => (
-                      <div 
-                        key={p.id} 
-                        className="absolute w-2 h-2 rounded-full blur-[2px]" 
-                        style={{ 
-                          left: `${p.left}%`, 
-                          backgroundColor: p.id % 3 === 0 ? '#60a5fa' : '#fdba74',
-                          animation: `thrustParticle ${p.duration}s linear infinite`, 
-                          animationDelay: `${p.delay}s`, 
-                          transform: `scale(${p.scale})`,
-                          opacity: p.opacity
-                        }} 
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* TECHNICAL LABELS */}
-              <div className="absolute inset-0 pointer-events-none">
-                <TechnicalLabel text="ORION_MPC" top="5%" left="65%" visible={!isOrionSeparated} />
-                <TechnicalLabel text="ICPS_STAGE" top="20%" left="65%" visible={!isOrionSeparated && !isCoreSeparated} />
-                <TechnicalLabel text="SLS_CORE" top="50%" left="70%" visible={!isCoreSeparated} />
-                <TechnicalLabel text="SRB_R" top="75%" left="85%" visible={!isBoosterSeparated} />
-                <TechnicalLabel text="SRB_L" top="75%" left="15%" visible={!isBoosterSeparated} />
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* TECHNICAL LABELS OVERLAY */}
+      <div className="absolute inset-0 pointer-events-none z-30">
+        <TechnicalLabel text="ORION_MPC" top="25%" left="60%" visible={!isOrionSeparated} />
+        <TechnicalLabel text="ICPS_STAGE" top="40%" left="60%" visible={!isOrionSeparated && !isCoreSeparated} />
+        <TechnicalLabel text="SLS_CORE" top="60%" left="65%" visible={!isCoreSeparated} />
+        <TechnicalLabel text="SRB_R" top="75%" left="75%" visible={!isBoosterSeparated} />
+        <TechnicalLabel text="SRB_L" top="75%" left="25%" visible={!isBoosterSeparated} />
       </div>
 
       {/* METRICS HUD */}
@@ -424,34 +212,8 @@ const ArtemisHUD: React.FC<Props> = ({ elapsedSeconds, telemetry, hideContainer 
 
       <style>{`
         @keyframes starFlow { 0% { transform: translateY(-100vh); } 100% { transform: translateY(100vh); } }
-        @keyframes thrustParticle {
-          0% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
-          50% { opacity: 0.8; filter: blur(2px); }
-          100% { transform: translateY(500px) scale(0.1); opacity: 0; filter: blur(8px); }
-        }
-        @keyframes venting {
-          0%, 100% { opacity: 0.05; transform: translateX(0) translateY(0) scale(1); }
-          50% { opacity: 0.2; transform: translateX(-10px) translateY(-5px) scale(1.1); }
-        }
         @keyframes blink-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
         @keyframes blink-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        @keyframes sweep {
-          0% { transform: translateX(-100%); opacity: 0; }
-          50% { opacity: 1; }
-          100% { transform: translateX(200%); opacity: 0; }
-        }
-        @keyframes enginePulse {
-          0%, 100% { opacity: 0.7; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.1); }
-        }
-        @keyframes starlightSweep {
-          0% { transform: translateX(-200%) rotate(45deg); opacity: 0; }
-          20%, 30% { opacity: 0.6; }
-          40% { transform: translateX(200%) rotate(45deg); opacity: 0; }
-          100% { transform: translateX(200%) rotate(45deg); opacity: 0; }
-        }
-        .preserve-3d { transform-style: preserve-3d; }
-        .ease-out-expo { transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
       `}</style>
     </div>
   );

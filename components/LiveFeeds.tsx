@@ -99,7 +99,7 @@ const ControlBar: React.FC<ControlProps> = ({
   );
 };
 
-export const PrimaryFeed: React.FC<{ videoId: string }> = ({ videoId }) => {
+export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(50);
@@ -177,9 +177,9 @@ export const PrimaryFeed: React.FC<{ videoId: string }> = ({ videoId }) => {
       ></iframe>
     </div>
   );
-};
+});
 
-export const SecondaryFeeds: React.FC<SharedProps> = ({ videoIds, onPromote, fillContainer }) => {
+export const SecondaryFeeds = React.memo(({ videoIds, onPromote, fillContainer }: SharedProps) => {
   const [muteStates, setMuteStates] = useState<boolean[]>(videoIds.map(() => true));
   const [playStates, setPlayStates] = useState<boolean[]>(videoIds.map(() => true));
   const [loadingStates, setLoadingStates] = useState<boolean[]>(videoIds.map(() => true));
@@ -274,4 +274,4 @@ export const SecondaryFeeds: React.FC<SharedProps> = ({ videoIds, onPromote, fil
       ))}
     </div>
   );
-};
+});

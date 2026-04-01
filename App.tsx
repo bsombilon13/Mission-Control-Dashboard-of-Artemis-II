@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MissionPhase, TelemetryData } from './types';
 import MissionHeader from './components/MissionHeader';
-import { PrimaryFeed, SecondaryFeeds } from './components/LiveFeeds';
+import MissionVisualFeeds from './components/MissionVisualFeeds';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
 import MultiViewMonitor from './components/MultiViewMonitor';
 import SettingsPanel from './components/SettingsPanel';
@@ -269,12 +269,12 @@ const App: React.FC = () => {
     return () => clearInterval(historyTimer);
   }, []);
 
-  const handlePromoteToPrimary = (index: number) => {
+  const handlePromoteToPrimary = useCallback((index: number) => {
     const actualIndex = index + 1;
     const newVideoIds = [...videoIds];
     [newVideoIds[0], newVideoIds[actualIndex]] = [newVideoIds[actualIndex], newVideoIds[0]];
     setVideoIds(newVideoIds);
-  };
+  }, [videoIds]);
 
   const handleToggleAudio = () => {
     if (!isAudioEnabled) {
@@ -323,23 +323,8 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
-            <div className="col-span-12 lg:col-span-8 flex flex-col h-full min-h-0 space-y-4">
-              <div className="flex space-x-4 h-full min-h-0">
-                <div className="flex-[2] min-h-0">
-                  <PrimaryFeed videoId={videoIds[0]} />
-                </div>
-                <div className="flex-1 flex flex-col space-y-4 min-h-0 hidden lg:flex">
-                  <div className="flex-1 min-h-0">
-                    <SecondaryFeeds videoIds={[videoIds[4]]} onPromote={() => handlePromoteToPrimary(3)} fillContainer={true} />
-                  </div>
-                  <div className="flex-1 min-h-0">
-                    <SecondaryFeeds videoIds={[videoIds[5]]} onPromote={() => handlePromoteToPrimary(4)} fillContainer={true} />
-                  </div>
-                </div>
-              </div>
-              <div className="shrink-0">
-                <SecondaryFeeds videoIds={videoIds.slice(1, 4)} onPromote={handlePromoteToPrimary} />
-              </div>
+            <div className="col-span-12 lg:col-span-8 flex flex-col h-full min-h-0">
+              <MissionVisualFeeds videoIds={videoIds} onPromote={handlePromoteToPrimary} />
             </div>
 
             <div className="col-span-12 lg:col-span-4 flex h-full min-h-0 space-x-4">
