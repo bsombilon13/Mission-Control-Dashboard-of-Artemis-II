@@ -25,16 +25,24 @@ const STORAGE_KEY = 'artemis_mission_config_v3';
 class MissionAudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private currentVolume: number = 0.25;
 
   init() {
     if (this.ctx) return;
     this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     this.masterGain = this.ctx.createGain();
     this.masterGain.connect(this.ctx.destination);
-    this.masterGain.gain.value = 0.25;
+    this.masterGain.gain.value = this.currentVolume;
   }
 
-  private playTone(freq: number, type: OscillatorType, duration: number, gainValue: number = 1.0) {
+  setVolume(value: number) {
+    this.currentVolume = Math.max(0, Math.min(1, value));
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(this.currentVolume, this.ctx.currentTime, 0.1);
+    }
+  }
+
+  private playTone(freq: number, type: OscillatorType, duration: number, gainValue: number = 1.0, slide: boolean = true) {
     if (!this.ctx || !this.masterGain) return;
     
     const osc = this.ctx.createOscillator();
@@ -42,7 +50,9 @@ class MissionAudioEngine {
     
     osc.type = type;
     osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(freq * 0.5, this.ctx.currentTime + duration);
+    if (slide) {
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, this.ctx.currentTime + duration);
+    }
     
     g.gain.setValueAtTime(gainValue, this.ctx.currentTime);
     g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
@@ -55,26 +65,47 @@ class MissionAudioEngine {
   }
 
   playMilestone() {
-    this.playTone(880, 'sine', 0.1, 0.3);
+    this.playTone(880, 'sine', 0.1, 0.4, false);
   }
 
   playPhase() {
-    this.playTone(220, 'square', 0.6, 0.2);
-    setTimeout(() => this.playTone(440, 'sine', 0.3, 0.2), 50);
+    // Low frequency notification for phase change
+    this.playTone(110, 'triangle', 0.8, 0.3);
+    setTimeout(() => this.playTone(220, 'sine', 0.4, 0.2), 100);
+  }
+
+  playWarning() {
+    this.playTone(440, 'sawtooth', 0.1, 0.15, false);
   }
 
   playCriticalWarning() {
-    this.playTone(660, 'sine', 0.05, 0.1);
-    setTimeout(() => this.playTone(550, 'sine', 0.05, 0.1), 100);
+    this.playTone(660, 'square', 0.05, 0.2, false);
+    setTimeout(() => this.playTone(550, 'square', 0.05, 0.2, false), 80);
+  }
+
+  playSuccess() {
+    this.playTone(523.25, 'sine', 0.1, 0.3, false); // C5
+    setTimeout(() => this.playTone(659.25, 'sine', 0.1, 0.3, false), 100); // E5
+    setTimeout(() => this.playTone(783.99, 'sine', 0.2, 0.3, false), 200); // G5
   }
 }
 
-const audioEngine = new MissionAudioEngine();
+export const audioEngine = new MissionAudioEngine();
 
 const App: React.FC = () => {
   const [phase, setPhase] = useState<MissionPhase>(MissionPhase.PRE_LAUNCH);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const [volume, setVolume] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const config = JSON.parse(saved);
+        if (typeof config.volume === 'number') return config.volume;
+      } catch (e) {}
+    }
+    return 0.25;
+  });
   
   const [isPhaseTransitioning, setIsPhaseTransitioning] = useState(false);
   const [displayPhase, setDisplayPhase] = useState<MissionPhase>(MissionPhase.PRE_LAUNCH);
@@ -141,12 +172,6 @@ const App: React.FC = () => {
     prevActiveIndex.current = activeMilestoneIndex;
   }, [activeMilestoneIndex, isAudioEnabled]);
 
-  useEffect(() => {
-    if (isAudioEnabled) {
-      audioEngine.playPhase();
-    }
-  }, [phase, isAudioEnabled]);
-
   // Critical Warning Heartbeat
   useEffect(() => {
     if (!isAudioEnabled || phase !== MissionPhase.PRE_LAUNCH) return;
@@ -155,7 +180,11 @@ const App: React.FC = () => {
     if (remaining > 0 && remaining < 60000) {
       const interval = remaining < 10000 ? 500 : 1000;
       const timer = setInterval(() => {
-        audioEngine.playCriticalWarning();
+        if (remaining < 10000) {
+          audioEngine.playCriticalWarning();
+        } else {
+          audioEngine.playWarning();
+        }
       }, interval);
       return () => clearInterval(timer);
     }
@@ -165,10 +194,12 @@ const App: React.FC = () => {
   useEffect(() => {
     const config = {
       videoIds,
-      launchDate: launchDate.toISOString()
+      launchDate: launchDate.toISOString(),
+      volume
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  }, [videoIds, launchDate]);
+    audioEngine.setVolume(volume);
+  }, [videoIds, launchDate, volume]);
 
   useEffect(() => {
     setTelemetryHistory([]);
@@ -209,7 +240,16 @@ const App: React.FC = () => {
       else if (t < 786780) newPhase = MissionPhase.RETURN;
       else newPhase = MissionPhase.SPLASHDOWN;
       
-      if (newPhase !== phase) setPhase(newPhase);
+      if (newPhase !== phase) {
+        setPhase(newPhase);
+        if (isAudioEnabled) {
+          if (newPhase === MissionPhase.ASCENT) {
+            audioEngine.playSuccess();
+          } else {
+            audioEngine.playPhase();
+          }
+        }
+      }
     }, 50); 
     return () => clearInterval(timer);
   }, [launchDate, phase]);
@@ -253,9 +293,11 @@ const App: React.FC = () => {
         <SettingsPanel 
           videoIds={videoIds} 
           launchDate={launchDate} 
-          onSave={(ids, newDate) => {
+          volume={volume}
+          onSave={(ids, newDate, newVolume) => {
             setVideoIds(ids);
             setLaunchDate(newDate);
+            setVolume(newVolume);
             setIsSettingsOpen(false);
           }} 
           onClose={() => setIsSettingsOpen(false)} 

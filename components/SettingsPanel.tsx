@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
+import { audioEngine } from '../App';
 
 interface Props {
   videoIds: string[];
   launchDate: Date;
-  onSave: (ids: string[], newLaunchDate: Date) => void;
+  volume: number;
+  onSave: (ids: string[], newLaunchDate: Date, newVolume: number) => void;
   onClose: () => void;
 }
 
-const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, onSave, onClose }) => {
+const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, volume, onSave, onClose }) => {
   const [tempIds, setTempIds] = useState([...videoIds]);
+  const [tempVolume, setTempVolume] = useState(volume);
   const [isSaving, setIsSaving] = useState(false);
   
   /**
@@ -87,7 +90,7 @@ const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, onSave, onClose 
       const newDate = new Date(isoWithOffset);
 
       if (!isNaN(newDate.getTime())) {
-        onSave(tempIds, newDate);
+        onSave(tempIds, newDate, tempVolume);
       } else {
         console.error("Mission Control: Invalid Launch Date generated", isoWithOffset);
         setIsSaving(false);
@@ -167,6 +170,45 @@ const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, onSave, onClose 
                 <p className="text-[9px] text-slate-500 mono leading-relaxed uppercase">
                   Clock synchronized to Kennedy Space Center (Florida). Date/time input uses Wall Clock time.
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Audio Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold">Audio Systems</h3>
+              <span className="text-[9px] text-slate-600 mono italic">{Math.round(tempVolume * 100)}% Gain</span>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[9px] text-slate-400 uppercase tracking-widest block">Master Volume Control</label>
+              <div className="flex items-center space-x-4">
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="1" 
+                  step="0.01"
+                  disabled={isSaving}
+                  value={tempVolume}
+                  onChange={(e) => setTempVolume(parseFloat(e.target.value))}
+                  className="flex-1 h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-blue-500 border border-slate-800"
+                />
+              </div>
+              <p className="text-[8px] text-slate-600 uppercase tracking-tighter">Adjusts gain for all mission-critical audio notifications</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                onClick={() => {
+                  audioEngine.init();
+                  audioEngine.setVolume(tempVolume);
+                  audioEngine.playMilestone();
+                }}
+                className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-[8px] uppercase tracking-widest font-bold text-slate-300 transition-colors"
+              >
+                Test Signal
+              </button>
+              <div className="flex items-center justify-center">
+                <span className="text-[8px] text-slate-500 mono uppercase tracking-tighter">System Ready</span>
               </div>
             </div>
           </section>
