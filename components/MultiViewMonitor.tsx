@@ -2,15 +2,16 @@
 import React, { useState } from 'react';
 import ArtemisHUD from './ArtemisHUD';
 import MissionTrajectoryMap from './MissionTrajectoryMap';
-import { TelemetryData } from '../types';
+import { TelemetryData, MissionPhase } from '../types';
 
 interface Props {
+  phase: MissionPhase;
   elapsedSeconds: number;
   telemetry: TelemetryData;
   telemetryHistory: TelemetryData[];
 }
 
-const MultiViewMonitor: React.FC<Props> = ({ elapsedSeconds, telemetry, telemetryHistory }) => {
+const MultiViewMonitor: React.FC<Props> = ({ phase, elapsedSeconds, telemetry, telemetryHistory }) => {
   const [activeView, setActiveView] = useState<'hud' | 'trajectory'>('hud');
 
   return (
@@ -58,7 +59,7 @@ const MultiViewMonitor: React.FC<Props> = ({ elapsedSeconds, telemetry, telemetr
       {/* Display Area */}
       <div className="flex-1 min-h-0 relative flex items-center justify-center overflow-hidden">
         {activeView === 'hud' && (
-          <ArtemisHUD elapsedSeconds={elapsedSeconds} telemetry={telemetry} hideContainer={true} />
+          <ArtemisHUD phase={phase} elapsedSeconds={elapsedSeconds} telemetry={telemetry} hideContainer={true} />
         )}
         {activeView === 'trajectory' && (
           <MissionTrajectoryMap elapsedSeconds={elapsedSeconds} hideContainer={true} />

@@ -1,16 +1,19 @@
 
-import React, { useMemo, Suspense } from 'react';
-import { TelemetryData } from '../types';
+import React, { useMemo, Suspense, useState } from 'react';
+import { TelemetryData, MissionPhase } from '../types';
 import ArtemisModel3D from './ArtemisModel3D';
+import { RotateCcw, ZoomIn } from 'lucide-react';
 
 interface Props {
+  phase: MissionPhase;
   elapsedSeconds: number;
   telemetry: TelemetryData;
   hideContainer?: boolean;
 }
 
-const ArtemisHUD: React.FC<Props> = ({ elapsedSeconds, telemetry, hideContainer }) => {
+const ArtemisHUD: React.FC<Props> = ({ phase, elapsedSeconds, telemetry, hideContainer }) => {
   const { altitude, velocity } = telemetry;
+  const [resetTrigger, setResetTrigger] = useState(0);
 
   const isPreLaunch = elapsedSeconds < 0;
   const isAscent = elapsedSeconds >= 0 && elapsedSeconds < 486;
@@ -179,6 +182,7 @@ const ArtemisHUD: React.FC<Props> = ({ elapsedSeconds, telemetry, hideContainer 
       {/* 3D VEHICLE MODEL */}
       <Suspense fallback={<div className="text-blue-500 mono text-[10px] animate-pulse">INITIALIZING 3D ENGINE...</div>}>
         <ArtemisModel3D 
+          phase={phase}
           elapsedSeconds={elapsedSeconds}
           pitchAngle={pitchAngle}
           isBoosterSeparated={isBoosterSeparated}
@@ -191,8 +195,25 @@ const ArtemisHUD: React.FC<Props> = ({ elapsedSeconds, telemetry, hideContainer 
           isReturn={isReturn}
           shakeX={shakeX}
           shakeY={shakeY}
+          resetCameraTrigger={resetTrigger}
         />
       </Suspense>
+
+      {/* 3D Controls Overlay */}
+      <div className="absolute bottom-4 right-4 z-40 flex flex-col space-y-2">
+        <button 
+          onClick={() => setResetTrigger(prev => prev + 1)}
+          className="p-2 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all group flex items-center space-x-2"
+          title="Reset View"
+        >
+          <RotateCcw size={12} className="group-hover:rotate-[-45deg] transition-transform" />
+          <span className="text-[8px] mono font-bold uppercase tracking-widest">Reset View</span>
+        </button>
+        <div className="p-2 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg text-slate-500 flex items-center space-x-2">
+          <ZoomIn size={12} />
+          <span className="text-[8px] mono font-bold uppercase tracking-widest">Scroll to Zoom</span>
+        </div>
+      </div>
 
       {/* TECHNICAL LABELS OVERLAY */}
       <div className="absolute inset-0 pointer-events-none z-30">

@@ -143,6 +143,12 @@ export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
     setRefreshKey(k => k + 1);
   }, []);
 
+  useEffect(() => {
+    // Fallback to hide loading state if iframe takes too long
+    const timer = setTimeout(() => setIsLoading(false), 8000);
+    return () => clearTimeout(timer);
+  }, [videoId, refreshKey]);
+
   return (
     <div ref={containerRef} className="h-full w-full glass rounded-2xl overflow-hidden border border-white/10 relative group bg-black shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
       {isLoading && (
@@ -166,15 +172,16 @@ export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
         size="md"
       />
 
-      <iframe
-        ref={iframeRef}
-        key={`primary-feed-${videoId}-${refreshKey}`}
-        onLoad={() => setIsLoading(false)}
-        className={`w-full h-full border-0 bg-black transition-all duration-1000 ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
-        src={embedUrl}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        referrerPolicy="strict-origin-when-cross-origin"
-      ></iframe>
+        <iframe
+          ref={iframeRef}
+          key={`primary-feed-${videoId}-${refreshKey}`}
+          onLoad={() => setIsLoading(false)}
+          className={`w-full h-full border-0 bg-black transition-all duration-1000 ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
+          src={embedUrl}
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          referrerPolicy="strict-origin-when-cross-origin"
+        ></iframe>
     </div>
   );
 });
@@ -193,6 +200,10 @@ export const SecondaryFeeds = React.memo(({ videoIds, onPromote, fillContainer }
     setPlayStates(videoIds.map(() => true));
     setLoadingStates(videoIds.map(() => true));
     setRefreshKeys(videoIds.map(() => 0));
+
+    // Fallback for each feed
+    const timers = videoIds.map((_, idx) => setTimeout(() => handleLoad(idx), 8000));
+    return () => timers.forEach(t => clearTimeout(t));
   }, [videoIds.length]);
 
   const toggleMute = (idx: number) => {
@@ -267,6 +278,7 @@ export const SecondaryFeeds = React.memo(({ videoIds, onPromote, fillContainer }
               onLoad={() => handleLoad(idx)}
               className={`w-full h-full border-0 bg-black transition-all duration-700 ${loadingStates[idx] ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
               src={getEmbedUrl(id)}
+              loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               referrerPolicy="strict-origin-when-cross-origin"
             ></iframe>

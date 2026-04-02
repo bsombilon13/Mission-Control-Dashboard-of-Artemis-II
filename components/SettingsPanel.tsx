@@ -125,8 +125,7 @@ const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, volume, onSave, 
             {tempIds.map((id, idx) => {
               let label = `Feed 0${idx + 1}`;
               if (idx === 0) label = "Primary Mission Feed";
-              if (idx > 0 && idx < 4) label = `Secondary Feed 0${idx}`;
-              if (idx >= 4) label = `Auxiliary Feed 0${idx - 3}`;
+              else label = `Secondary Feed 0${idx}`;
 
               return (
                 <div key={idx} className="group">

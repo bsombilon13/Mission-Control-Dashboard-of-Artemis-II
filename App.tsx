@@ -5,6 +5,7 @@ import MissionHeader from './components/MissionHeader';
 import MissionVisualFeeds from './components/MissionVisualFeeds';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
 import MultiViewMonitor from './components/MultiViewMonitor';
+import ArowMonitor from './components/ArowMonitor';
 import SettingsPanel from './components/SettingsPanel';
 import HorizontalTimeline from './components/HorizontalTimeline';
 import NextMilestoneCard from './components/NextMilestoneCard';
@@ -15,8 +16,6 @@ const INITIAL_VIDEO_IDS = [
   'Jm8wRjD3xVA', // ISS Live
   '9vX2P4w6u-4', // Artemis Highlights
   '21X5lGlDOfg', // Starship
-  '_6_87-m8S_8', // NASA Live 2
-  'D-m09l6K9S8'  // NASA Live 3
 ];
 const HISTORY_LIMIT = 40;
 const STORAGE_KEY = 'artemis_mission_config_v3';
@@ -96,6 +95,7 @@ const App: React.FC = () => {
   const [phase, setPhase] = useState<MissionPhase>(MissionPhase.PRE_LAUNCH);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const [isHoldActive, setIsHoldActive] = useState(false);
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -228,6 +228,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
+      if (isHoldActive) return;
+      
       const now = Date.now();
       setCurrentMs(now);
       const t = (now - launchDate.getTime()) / 1000;
@@ -312,6 +314,8 @@ const App: React.FC = () => {
           onOpenSettings={() => setIsSettingsOpen(true)} 
           isAudioEnabled={isAudioEnabled}
           onToggleAudio={handleToggleAudio}
+          isHoldActive={isHoldActive}
+          onToggleHold={() => setIsHoldActive(!isHoldActive)}
         />
         
         <div className="flex-1 p-4 flex flex-col overflow-hidden space-y-4">
@@ -323,14 +327,19 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
-            <div className="col-span-12 lg:col-span-8 flex flex-col h-full min-h-0">
+            <div className="col-span-12 lg:col-span-4 flex flex-col h-full min-h-0">
               <MissionVisualFeeds videoIds={videoIds} onPromote={handlePromoteToPrimary} />
+            </div>
+
+            <div className="col-span-12 lg:col-span-4 flex flex-col h-full min-h-0">
+              <ArowMonitor />
             </div>
 
             <div className="col-span-12 lg:col-span-4 flex h-full min-h-0 space-x-4">
               <div className="flex-1 min-h-0 h-full">
                 <MultiViewMonitor 
                   key={`monitor-${launchDate.getTime()}`} 
+                  phase={phase}
                   elapsedSeconds={elapsedSeconds} 
                   telemetry={telemetry} 
                   telemetryHistory={telemetryHistory} 
@@ -338,7 +347,7 @@ const App: React.FC = () => {
               </div>
               <div 
                 key={`timeline-transition-${displayPhase}`}
-                className={`w-64 shrink-0 h-full min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
+                className={`w-48 shrink-0 h-full min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
               >
                 <MissionTimeline elapsedSeconds={elapsedSeconds} isCompressed={true} />
               </div>

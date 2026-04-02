@@ -9,6 +9,8 @@ interface Props {
   onOpenSettings: () => void;
   isAudioEnabled: boolean;
   onToggleAudio: () => void;
+  isHoldActive: boolean;
+  onToggleHold: () => void;
 }
 
 interface PhaseConfig {
@@ -98,7 +100,16 @@ const PHASE_CONFIG: PhaseConfig[] = [
   }
 ];
 
-const MissionHeader: React.FC<Props> = ({ phase, setPhase, countdownMs, onOpenSettings, isAudioEnabled, onToggleAudio }) => {
+const MissionHeader: React.FC<Props> = ({ 
+  phase, 
+  setPhase, 
+  countdownMs, 
+  onOpenSettings, 
+  isAudioEnabled, 
+  onToggleAudio,
+  isHoldActive,
+  onToggleHold
+}) => {
   const [displayPhase, setDisplayPhase] = useState(phase);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -245,6 +256,19 @@ const MissionHeader: React.FC<Props> = ({ phase, setPhase, countdownMs, onOpenSe
           </div>
           
           <div className="flex items-center space-x-2">
+            <button
+              onClick={onToggleHold}
+              className={`px-4 py-2 rounded-xl border font-black uppercase tracking-widest transition-all ${
+                isHoldActive
+                  ? 'bg-red-600 border-red-500 text-white animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]'
+                  : isCritical
+                    ? 'bg-white/10 border-red-500/50 text-red-400 hover:bg-red-600/20'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              {isHoldActive ? 'RESUME COUNT' : 'HOLD COUNT'}
+            </button>
+
             <button 
               onClick={onToggleAudio}
               className={`p-2.5 rounded-xl border transition-all group flex items-center justify-center ${

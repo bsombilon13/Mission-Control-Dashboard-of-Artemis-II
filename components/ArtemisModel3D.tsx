@@ -1,10 +1,12 @@
 
 import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, Float, Stars, Sparkles, Trail } from '@react-three/drei';
+import { PerspectiveCamera, Float, Stars, Sparkles, Trail, OrbitControls } from '@react-three/drei';
+import { MissionPhase } from '../types';
 import * as THREE from 'three';
 
 interface ModelProps {
+  phase: MissionPhase;
   elapsedSeconds: number;
   pitchAngle: number;
   isBoosterSeparated: boolean;
@@ -17,9 +19,11 @@ interface ModelProps {
   isReturn: boolean;
   shakeX: number;
   shakeY: number;
+  resetCameraTrigger?: number;
 }
 
 const SLSModel: React.FC<ModelProps> = ({
+  phase,
   elapsedSeconds,
   pitchAngle,
   isBoosterSeparated,
@@ -41,15 +45,28 @@ const SLSModel: React.FC<ModelProps> = ({
   const srbRRef = useRef<THREE.Group>(null);
   const lasRef = useRef<THREE.Group>(null);
 
+  const isPreLaunch = phase === MissionPhase.PRE_LAUNCH;
+  const isSplashdown = phase === MissionPhase.SPLASHDOWN;
+
   useFrame((state) => {
     if (!groupRef.current) return;
 
-    // Apply pitch
-    groupRef.current.rotation.x = THREE.MathUtils.degToRad(pitchAngle);
+    // Apply pitch (only if not pre-launch or splashdown)
+    if (!isPreLaunch && !isSplashdown) {
+      groupRef.current.rotation.x = THREE.MathUtils.degToRad(pitchAngle);
+    } else if (isSplashdown) {
+      groupRef.current.rotation.x = THREE.MathUtils.degToRad(180);
+      groupRef.current.position.y = -2;
+    } else {
+      groupRef.current.rotation.x = 0;
+      groupRef.current.position.y = 0;
+    }
 
     // Apply shake (scaled down for 3D space)
-    groupRef.current.position.x = shakeX * 0.01;
-    groupRef.current.position.y = shakeY * 0.01;
+    if (!isPreLaunch && !isSplashdown) {
+      groupRef.current.position.x = shakeX * 0.01;
+      groupRef.current.position.y = shakeY * 0.01;
+    }
 
     // Separation animations
     if (isBoosterSeparated && srbLRef.current && srbRRef.current) {
@@ -130,83 +147,159 @@ const SLSModel: React.FC<ModelProps> = ({
       </group>
 
       {/* ICPS */}
-      <group ref={icpsRef} position={[0, 4, 0]}>
-        <mesh>
-          <cylinderGeometry args={[1.2, 1.2, 3, 32]} />
-          <meshStandardMaterial color="#e2e8f0" metalness={0.3} roughness={0.5} />
-        </mesh>
-        {isICPSActive && !isOrionSeparated && (
-          <Sparkles count={50} scale={2} size={2} speed={0.5} color="#60a5fa" position={[0, -2, 0]} />
-        )}
-      </group>
+      {!isCoreSeparated && (
+        <group ref={icpsRef} position={[0, 4, 0]}>
+          <mesh>
+            <cylinderGeometry args={[1.2, 1.2, 3, 32]} />
+            <meshStandardMaterial color="#e2e8f0" metalness={0.3} roughness={0.5} />
+          </mesh>
+          {isICPSActive && !isOrionSeparated && (
+            <Sparkles count={50} scale={2} size={2} speed={0.5} color="#60a5fa" position={[0, -2, 0]} />
+          )}
+        </group>
+      )}
 
       {/* CORE STAGE */}
-      <group ref={coreRef} position={[0, -2, 0]}>
-        <mesh>
-          <cylinderGeometry args={[1.5, 1.5, 10, 32]} />
-          <meshStandardMaterial color="#ea580c" metalness={0.1} roughness={0.8} />
-        </mesh>
-        
-        {/* SRBs */}
-        {!isBoosterSeparated && (
-          <>
-            <group ref={srbLRef} position={[-2.5, -1, 0]}>
-              <mesh>
-                <cylinderGeometry args={[0.8, 0.8, 8, 32]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-              <mesh position={[0, 4.5, 0]}>
-                <coneGeometry args={[0.8, 1, 32]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-              {isAscent && (
-                <Sparkles count={100} scale={3} size={4} speed={2} color="#fb923c" position={[0, -5, 0]} />
-              )}
-            </group>
-            <group ref={srbRRef} position={[2.5, -1, 0]}>
-              <mesh>
-                <cylinderGeometry args={[0.8, 0.8, 8, 32]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-              <mesh position={[0, 4.5, 0]}>
-                <coneGeometry args={[0.8, 1, 32]} />
-                <meshStandardMaterial color="#ffffff" />
-              </mesh>
-              {isAscent && (
-                <Sparkles count={100} scale={3} size={4} speed={2} color="#fb923c" position={[0, -5, 0]} />
-              )}
-            </group>
-          </>
-        )}
+      {!isCoreSeparated && (
+        <group ref={coreRef} position={[0, -2, 0]}>
+          <mesh>
+            <cylinderGeometry args={[1.5, 1.5, 10, 32]} />
+            <meshStandardMaterial color="#ea580c" metalness={0.1} roughness={0.8} />
+          </mesh>
+          
+          {/* SRBs */}
+          {!isBoosterSeparated && (
+            <>
+              <group ref={srbLRef} position={[-2.5, -1, 0]}>
+                <mesh>
+                  <cylinderGeometry args={[0.8, 0.8, 8, 32]} />
+                  <meshStandardMaterial color="#ffffff" />
+                </mesh>
+                <mesh position={[0, 4.5, 0]}>
+                  <coneGeometry args={[0.8, 1, 32]} />
+                  <meshStandardMaterial color="#ffffff" />
+                </mesh>
+                {isAscent && (
+                  <Sparkles count={100} scale={3} size={4} speed={2} color="#fb923c" position={[0, -5, 0]} />
+                )}
+              </group>
+              <group ref={srbRRef} position={[2.5, -1, 0]}>
+                <mesh>
+                  <cylinderGeometry args={[0.8, 0.8, 8, 32]} />
+                  <meshStandardMaterial color="#ffffff" />
+                </mesh>
+                <mesh position={[0, 4.5, 0]}>
+                  <coneGeometry args={[0.8, 1, 32]} />
+                  <meshStandardMaterial color="#ffffff" />
+                </mesh>
+                {isAscent && (
+                  <Sparkles count={100} scale={3} size={4} speed={2} color="#fb923c" position={[0, -5, 0]} />
+                )}
+              </group>
+            </>
+          )}
 
-        {/* Core Engines Glow */}
-        {isAscent && !isCoreSeparated && (
-          <group position={[0, -5.5, 0]}>
-            <Trail
-              width={5}
-              length={10}
-              color={new THREE.Color("#f97316")}
-              attenuation={(t) => t * t}
-            >
-              <mesh position={[0, 0, 0]}>
-                <sphereGeometry args={[0.1]} />
-                <meshBasicMaterial color="#f97316" />
+          {/* Core Engines Glow */}
+          {isAscent && !isCoreSeparated && (
+            <group position={[0, -5.5, 0]}>
+              <Trail
+                width={5}
+                length={10}
+                color={new THREE.Color("#f97316")}
+                attenuation={(t) => t * t}
+              >
+                <mesh position={[0, 0, 0]}>
+                  <sphereGeometry args={[0.1]} />
+                  <meshBasicMaterial color="#f97316" />
+                </mesh>
+              </Trail>
+              <Sparkles count={150} scale={4} size={6} speed={3} color="#f97316" />
+              <pointLight intensity={2} distance={10} color="#f97316" />
+            </group>
+          )}
+        </group>
+      )}
+
+      {/* Launchpad Ground & Tower (Pre-launch) */}
+      {isPreLaunch && (
+        <group>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -10, 0]}>
+            <planeGeometry args={[50, 50]} />
+            <meshStandardMaterial color="#334155" roughness={0.8} />
+          </mesh>
+          {/* Launch Tower */}
+          <mesh position={[6, -2, -4]}>
+            <boxGeometry args={[2, 16, 2]} />
+            <meshStandardMaterial color="#475569" metalness={0.5} />
+          </mesh>
+          {/* Umbilical Arms */}
+          <mesh position={[3, 4, -2]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.1, 0.1, 6]} />
+            <meshStandardMaterial color="#64748b" />
+          </mesh>
+          <mesh position={[3, -2, -2]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.1, 0.1, 6]} />
+            <meshStandardMaterial color="#64748b" />
+          </mesh>
+        </group>
+      )}
+
+      {/* Water Surface & Splashes (Splashdown) */}
+      {isSplashdown && (
+        <group>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]}>
+            <planeGeometry args={[100, 100]} />
+            <meshStandardMaterial color="#1e3a8a" transparent opacity={0.6} />
+          </mesh>
+          <Sparkles count={100} scale={10} size={5} speed={0.2} color="#ffffff" position={[0, -2, 0]} />
+        </group>
+      )}
+
+      {/* Parachutes (Return & Splashdown) */}
+      {(isReturn || isSplashdown) && isOrionSeparated && (
+        <group position={[0, 2, 0]}>
+          {[0, 120, 240].map((angle) => (
+            <group key={angle} rotation={[0, THREE.MathUtils.degToRad(angle), 0]}>
+              <mesh position={[1.5, 3, 0]}>
+                <sphereGeometry args={[1.2, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+                <meshStandardMaterial color="#f97316" side={THREE.DoubleSide} />
               </mesh>
-            </Trail>
-            <Sparkles count={150} scale={4} size={6} speed={3} color="#f97316" />
-            <pointLight intensity={2} distance={10} color="#f97316" />
-          </group>
-        )}
-      </group>
+              {/* Parachute Lines */}
+              <mesh position={[0.75, 1.5, 0]} rotation={[0, 0, Math.PI / 4]}>
+                <cylinderGeometry args={[0.01, 0.01, 3]} />
+                <meshStandardMaterial color="#ffffff" />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      )}
     </group>
   );
 };
 
 const ArtemisModel3D: React.FC<ModelProps> = (props) => {
+  const controlsRef = useRef<any>(null);
+
+  React.useEffect(() => {
+    if (controlsRef.current && props.resetCameraTrigger) {
+      controlsRef.current.reset();
+    }
+  }, [props.resetCameraTrigger]);
+
   return (
-    <div className="w-full h-full absolute inset-0 z-10 pointer-events-none">
+    <div className="w-full h-full absolute inset-0 z-10">
       <Canvas shadows gl={{ antialias: true, alpha: true }}>
         <PerspectiveCamera makeDefault position={[0, 0, 25]} fov={35} />
+        <OrbitControls 
+          ref={controlsRef}
+          enablePan={false} 
+          enableDamping={true}
+          dampingFactor={0.05}
+          minDistance={10} 
+          maxDistance={50} 
+          autoRotate={props.phase === MissionPhase.ORBIT || props.phase === MissionPhase.LUNAR_FLYBY}
+          autoRotateSpeed={0.5}
+        />
         
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={1.5} color="#ffffff" />

@@ -7,7 +7,7 @@ interface Props {
   onPromote: (idx: number) => void;
 }
 
-type ViewMode = 'COMMAND' | 'QUAD' | 'GRID' | 'SOLO';
+type ViewMode = 'COMMAND' | 'QUAD' | 'SOLO';
 
 const MissionVisualFeeds: React.FC<Props> = ({ videoIds, onPromote }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('COMMAND');
@@ -16,12 +16,12 @@ const MissionVisualFeeds: React.FC<Props> = ({ videoIds, onPromote }) => {
   const viewModes: { id: ViewMode; label: string }[] = [
     { id: 'COMMAND', label: 'Command' },
     { id: 'QUAD', label: 'Quad' },
-    { id: 'GRID', label: 'Grid' },
     { id: 'SOLO', label: 'Solo' },
   ];
 
-  const handlePromote4 = useCallback(() => onPromote(3), [onPromote]);
-  const handlePromote5 = useCallback(() => onPromote(4), [onPromote]);
+  const handlePromote1 = useCallback(() => onPromote(0), [onPromote]);
+  const handlePromote2 = useCallback(() => onPromote(1), [onPromote]);
+  const handlePromote3 = useCallback(() => onPromote(2), [onPromote]);
 
   return (
     <div className="glass rounded-2xl border border-white/10 flex flex-col h-full bg-slate-900/40 overflow-hidden shadow-2xl">
@@ -64,15 +64,15 @@ const MissionVisualFeeds: React.FC<Props> = ({ videoIds, onPromote }) => {
               </div>
               <div className="flex-1 flex flex-col space-y-4 min-h-0 hidden lg:flex">
                 <div className="flex-1 min-h-0">
-                  <SecondaryFeeds videoIds={[videoIds[4]]} onPromote={handlePromote4} fillContainer={true} />
+                  <SecondaryFeeds videoIds={[videoIds[1]]} onPromote={handlePromote1} fillContainer={true} />
                 </div>
                 <div className="flex-1 min-h-0">
-                  <SecondaryFeeds videoIds={[videoIds[5]]} onPromote={handlePromote5} fillContainer={true} />
+                  <SecondaryFeeds videoIds={[videoIds[2]]} onPromote={handlePromote2} fillContainer={true} />
                 </div>
               </div>
             </div>
             <div className="shrink-0 h-32">
-              <SecondaryFeeds videoIds={videoIds.slice(1, 4)} onPromote={onPromote} fillContainer={true} />
+              <SecondaryFeeds videoIds={[videoIds[3]]} onPromote={handlePromote3} fillContainer={true} />
             </div>
           </div>
         )}
@@ -81,16 +81,6 @@ const MissionVisualFeeds: React.FC<Props> = ({ videoIds, onPromote }) => {
           <div className="grid grid-cols-2 grid-rows-2 gap-4 h-full">
             {videoIds.slice(0, 4).map((id, idx) => (
               <div key={`quad-${id}-${idx}`} className="h-full w-full">
-                <SecondaryFeeds videoIds={[id]} onPromote={idx === 0 ? undefined : () => onPromote(idx - 1)} fillContainer={true} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {viewMode === 'GRID' && (
-          <div className="grid grid-cols-3 grid-rows-2 gap-4 h-full">
-            {videoIds.map((id, idx) => (
-              <div key={`grid-${id}-${idx}`} className="h-full w-full">
                 <SecondaryFeeds videoIds={[id]} onPromote={idx === 0 ? undefined : () => onPromote(idx - 1)} fillContainer={true} />
               </div>
             ))}
