@@ -50,7 +50,7 @@ export async function fetchMissionUpdates(): Promise<MissionUpdate[]> {
     
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: "Extract the latest 5 news updates from https://www.nasa.gov/artemis-ii-news-and-updates/. For each update, provide a title, a brief summary, a timestamp (ISO 8601), and the direct URL to the full article. Categorize them as 'critical' (for major mission milestones or changes), 'advisory' (for training or status reports), or 'update' (for general news). Return the data as a JSON array where each object has fields: title, summary, timestamp, type, and url. Ensure you provide exactly 5 entries if available.",
+      contents: `Current Date: ${new Date().toISOString()}. Extract the latest 5 news updates from https://www.nasa.gov/artemis-ii-news-and-updates/. For each update, provide a title, a brief summary, a timestamp (ISO 8601), and the direct URL to the full article. Categorize them as 'critical' (for major mission milestones or changes), 'advisory' (for training or status reports), or 'update' (for general news). Return the data as a JSON array where each object has fields: title, summary, timestamp, type, and url. Ensure you provide exactly 5 entries if available.`,
       config: {
         tools: [{ urlContext: {} }, { googleSearch: {} }],
         responseMimeType: "application/json",
