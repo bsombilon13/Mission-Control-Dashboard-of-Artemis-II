@@ -4,11 +4,13 @@ import App from './App';
 import './index.css';
 
 const rootElement = document.getElementById('root');
+console.log("Artemis II Mission Control: Root element found:", !!rootElement);
 
 if (!rootElement) {
   console.error("FATAL: Could not find root element with id 'root'");
 } else {
   try {
+    console.log("Artemis II Mission Control: Initializing ReactDOM...");
     const root = ReactDOM.createRoot(rootElement);
     root.render(
       <React.StrictMode>

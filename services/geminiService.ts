@@ -11,10 +11,25 @@ export interface MissionUpdate {
   url: string;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY is missing. AI features will be disabled.");
+      return null;
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export async function getMissionBriefing(phase: MissionPhase, telemetry: TelemetryData): Promise<string> {
   try {
+    const ai = getAI();
+    if (!ai) return "AI features currently offline.";
+    
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `You are a NASA flight assistant. Analyze the current mission phase (${phase}) and telemetry (alt: ${telemetry.altitude.toFixed(2)}km, vel: ${telemetry.velocity.toFixed(2)}km/h, fuel: ${telemetry.fuel.toFixed(1)}%). Provide a concise, professional 2-sentence briefing for the crew.`,
@@ -28,6 +43,9 @@ export async function getMissionBriefing(phase: MissionPhase, telemetry: Telemet
 
 export async function fetchMissionUpdates(): Promise<MissionUpdate[]> {
   try {
+    const ai = getAI();
+    if (!ai) return [];
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: "Extract the latest 5 news updates from https://www.nasa.gov/artemis-ii-news-and-updates/. For each update, provide a title, a brief summary, a timestamp, and the direct URL to the full article. Categorize them as 'critical' (for major mission milestones or changes), 'advisory' (for training or status reports), or 'update' (for general news). Return the data as a JSON array where each object has fields: title, summary, timestamp, type, and url.",
