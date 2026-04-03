@@ -4,9 +4,10 @@ import { MissionPhase, TelemetryData } from './types';
 import MissionHeader from './components/MissionHeader';
 import MissionVisualFeeds from './components/MissionVisualFeeds';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
-import MultiViewMonitor from './components/MultiViewMonitor';
 import ArowMonitor from './components/ArowMonitor';
+import MissionNotifications from './components/MissionNotifications';
 import SettingsPanel from './components/SettingsPanel';
+import { fetchMissionUpdates, MissionUpdate } from './services/geminiService';
 import HorizontalTimeline from './components/HorizontalTimeline';
 import NextMilestoneCard from './components/NextMilestoneCard';
 
@@ -94,8 +95,11 @@ export const audioEngine = new MissionAudioEngine();
 const App: React.FC = () => {
   const [phase, setPhase] = useState<MissionPhase>(MissionPhase.PRE_LAUNCH);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [missionUpdates, setMissionUpdates] = useState<MissionUpdate[]>([]);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
-  const [isHoldActive, setIsHoldActive] = useState(false);
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -228,8 +232,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      if (isHoldActive) return;
-      
       const now = Date.now();
       setCurrentMs(now);
       const t = (now - launchDate.getTime()) / 1000;
@@ -285,7 +287,44 @@ const App: React.FC = () => {
     setIsAudioEnabled(!isAudioEnabled);
   };
 
+  const loadUpdates = useCallback(async () => {
+    setIsNotificationsLoading(true);
+    try {
+      const data = await fetchMissionUpdates();
+      if (data && data.length > 0) {
+        setMissionUpdates(data);
+        setLastRefreshed(new Date());
+      } else if (missionUpdates.length === 0) {
+        // Fallback
+        setMissionUpdates([
+          {
+            id: 'fallback-1',
+            title: 'NASA Artemis II Mission Countdown Released',
+            summary: 'NASA has officially released the countdown sequence for the Artemis II mission, detailing the final hours before liftoff.',
+            timestamp: '2026-04-02T14:30:00Z',
+            type: 'critical',
+            url: 'https://www.nasa.gov/artemis-ii-news-and-updates/'
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error("Error loading mission updates:", err);
+    } finally {
+      setIsNotificationsLoading(false);
+    }
+  }, [missionUpdates.length]);
+
+  useEffect(() => {
+    loadUpdates();
+    const interval = setInterval(loadUpdates, 300000); // 5 mins
+    return () => clearInterval(interval);
+  }, [loadUpdates]);
+
   const countdownMs = useMemo(() => launchDate.getTime() - currentMs, [currentMs, launchDate]);
+  const missionDay = useMemo(() => {
+    if (elapsedSeconds < 0) return null;
+    return Math.floor(elapsedSeconds / 86400) + 1;
+  }, [elapsedSeconds]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden relative">
@@ -306,6 +345,15 @@ const App: React.FC = () => {
         />
       )}
 
+      <MissionNotifications 
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        updates={missionUpdates}
+        isLoading={isNotificationsLoading}
+        onRefresh={loadUpdates}
+        lastRefreshed={lastRefreshed}
+      />
+
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <MissionHeader 
           phase={phase} 
@@ -314,8 +362,9 @@ const App: React.FC = () => {
           onOpenSettings={() => setIsSettingsOpen(true)} 
           isAudioEnabled={isAudioEnabled}
           onToggleAudio={handleToggleAudio}
-          isHoldActive={isHoldActive}
-          onToggleHold={() => setIsHoldActive(!isHoldActive)}
+          onOpenNotifications={() => setIsNotificationsOpen(true)}
+          notificationCount={missionUpdates.length}
+          missionDay={missionDay}
         />
         
         <div className="flex-1 p-4 flex flex-col overflow-hidden space-y-4">
@@ -337,13 +386,7 @@ const App: React.FC = () => {
 
             <div className="col-span-12 lg:col-span-4 flex h-full min-h-0 space-x-4">
               <div className="flex-1 min-h-0 h-full">
-                <MultiViewMonitor 
-                  key={`monitor-${launchDate.getTime()}`} 
-                  phase={phase}
-                  elapsedSeconds={elapsedSeconds} 
-                  telemetry={telemetry} 
-                  telemetryHistory={telemetryHistory} 
-                />
+                <ArowMonitor />
               </div>
               <div 
                 key={`timeline-transition-${displayPhase}`}

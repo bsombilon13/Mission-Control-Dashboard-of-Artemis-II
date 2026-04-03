@@ -195,6 +195,17 @@ const MissionTrajectoryMap: React.FC<Props> = ({ elapsedSeconds, hideContainer }
             </div>
           )}
 
+          {/* LEGEND */}
+          <div className="absolute top-2 right-2 flex flex-col space-y-1.5 bg-slate-900/80 backdrop-blur-md border border-white/10 p-2 rounded-lg z-40">
+            <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1 border-b border-white/5 pb-1">Mission Phases</span>
+            {MILESTONES.map(m => (
+              <div key={m.id} className="flex items-center space-x-2">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: m.color }}></div>
+                <span className="text-[7px] font-bold text-slate-300 uppercase tracking-tighter">{m.shortLabel}</span>
+              </div>
+            ))}
+          </div>
+
           {selectedMilestone && (
             <div className="absolute bottom-2 left-2 right-2 bg-slate-900/95 border border-blue-500/40 rounded-lg p-3 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-300 z-50">
               <div className="flex justify-between items-start mb-2">

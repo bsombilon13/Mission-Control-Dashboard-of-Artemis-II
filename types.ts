@@ -15,6 +15,8 @@ export interface TimelineEvent {
   description?: string;
   category?: 'countdown' | 'ascent' | 'transit' | 'lunar' | 'recovery';
   phase?: 'pre-launch' | 'ascent' | 'orbit' | 'transit' | 'lunar' | 'recovery' | 'splashdown';
+  estimatedDuration?: string;
+  associatedModule?: string;
 }
 
 export interface TelemetryData {

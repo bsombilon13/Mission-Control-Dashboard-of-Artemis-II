@@ -1,6 +1,8 @@
 
 import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { TimelineEvent } from '../types';
+import { Info, Clock, Activity, CheckCircle2, Circle } from 'lucide-react';
 
 interface Props {
   elapsedSeconds: number;
@@ -13,10 +15,10 @@ export const MISSION_EVENTS: TimelineEvent[] = [
   { offsetSeconds: -175500, phase: 'pre-launch', label: "Propulsion Prep Start", description: "LOX/LH2 system preparations for vehicle loading begins (L-48H 45M)." },
   { offsetSeconds: -175200, phase: 'pre-launch', label: "L-48H 40M: Clock Start", description: "The countdown clock begins its initial run." },
   { offsetSeconds: -171000, phase: 'pre-launch', label: "Sound Suppression Prep", description: "Fill the water tank for the sound suppression system (L-47H 30M)." },
-  { offsetSeconds: -160200, phase: 'pre-launch', label: "Orion Spacecraft Power-up", description: "The Orion spacecraft is powered up if not already powered at call to stations (L-44H 30M)." },
-  { offsetSeconds: -144000, phase: 'pre-launch', label: "ICPS Power-up", description: "The interim cryogenic propulsion stage (ICPS) is powered up (L-40H)." },
-  { offsetSeconds: -142200, phase: 'pre-launch', label: "Core Stage Power-up", description: "The core stage is powered up (L-39H 30M)." },
-  { offsetSeconds: -139500, phase: 'pre-launch', label: "RS-25 Final Prep", description: "Final preparations of the four RS-25 engines (L-38H 45M)." },
+  { offsetSeconds: -160200, phase: 'pre-launch', label: "Orion Spacecraft Power-up", description: "The Orion spacecraft is powered up if not already powered at call to stations (L-44H 30M).", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: -144000, phase: 'pre-launch', label: "ICPS Power-up", description: "The interim cryogenic propulsion stage (ICPS) is powered up (L-40H).", associatedModule: "ICPS" },
+  { offsetSeconds: -142200, phase: 'pre-launch', label: "Core Stage Power-up", description: "The core stage is powered up (L-39H 30M).", associatedModule: "SLS Core Stage" },
+  { offsetSeconds: -139500, phase: 'pre-launch', label: "RS-25 Final Prep", description: "Final preparations of the four RS-25 engines (L-38H 45M).", associatedModule: "RS-25 Engines" },
   { offsetSeconds: -121500, phase: 'pre-launch', label: "ICPS Power-down", description: "The ICPS is powered down for pre-launch system cycling (L-33H 45M)." },
   { offsetSeconds: -117000, phase: 'pre-launch', label: "Orion Battery Charge", description: "Charge Orion flight batteries to 100% (L-32H 30M)." },
   { offsetSeconds: -109800, phase: 'pre-launch', label: "Core Battery Charge", description: "Charge core stage flight batteries (L-30H 30M)." },
@@ -100,20 +102,20 @@ export const MISSION_EVENTS: TimelineEvent[] = [
   { offsetSeconds: -6.36, phase: 'ascent', label: "RS-25 Startup", description: "RS-25 engines startup sequence begins." },
   
   // --- MISSION ASCENT ---
-  { offsetSeconds: 0, phase: 'ascent', label: "T-0: LIFTOFF", description: "Booster ignition, umbilical separation, and liftoff." },
-  { offsetSeconds: 9, phase: 'ascent', label: "Tower Clear", description: "SLS clears the launch tower." },
-  { offsetSeconds: 70, phase: 'ascent', label: "Max Q", description: "Maximum dynamic pressure on vehicle structure." },
-  { offsetSeconds: 128, phase: 'ascent', label: "SRB Separation", description: "Solid Rocket Booster burnout and separation." },
-  { offsetSeconds: 198, phase: 'ascent', label: "LAS Jettison", description: "Launch abort system jettison – safe to orbit." },
-  { offsetSeconds: 486, phase: 'ascent', label: "MECO", description: "SLS core stage main engine cutoff." },
+  { offsetSeconds: 0, phase: 'ascent', label: "T-0: LIFTOFF", description: "Booster ignition, umbilical separation, and liftoff.", associatedModule: "SLS Block 1" },
+  { offsetSeconds: 9, phase: 'ascent', label: "Tower Clear", description: "SLS clears the launch tower.", estimatedDuration: "9s" },
+  { offsetSeconds: 70, phase: 'ascent', label: "Max Q", description: "Maximum dynamic pressure on vehicle structure.", estimatedDuration: "12s" },
+  { offsetSeconds: 128, phase: 'ascent', label: "SRB Separation", description: "Solid Rocket Booster burnout and separation.", associatedModule: "SRBs" },
+  { offsetSeconds: 198, phase: 'ascent', label: "LAS Jettison", description: "Launch abort system jettison – safe to orbit.", associatedModule: "LAS" },
+  { offsetSeconds: 486, phase: 'ascent', label: "MECO", description: "SLS core stage main engine cutoff.", estimatedDuration: "8m 6s" },
   { offsetSeconds: 498, phase: 'ascent', label: "Core Stage Separation", description: "Core stage separates from ICPS." },
   
   // --- MISSION PHASES (Summarized) ---
-  { offsetSeconds: 6477, phase: 'orbit', label: "Apogee Raise Burn", description: "Insertion into high Earth orbit." },
-  { offsetSeconds: 92220, phase: 'transit', label: "TLI Burn", description: "Translunar Injection - departing for the Moon." },
-  { offsetSeconds: 436980, phase: 'lunar', label: "Lunar Flyby", description: "Closest approach to the Lunar surface." },
-  { offsetSeconds: 783180, phase: 'recovery', label: "Entry Interface", description: "Orion hits atmosphere." },
-  { offsetSeconds: 783960, phase: 'splashdown', label: "SPLASHDOWN", description: "Artemis II splashdown in the Pacific Ocean." },
+  { offsetSeconds: 6477, phase: 'orbit', label: "Apogee Raise Burn", description: "Insertion into high Earth orbit.", estimatedDuration: "20s", associatedModule: "ICPS" },
+  { offsetSeconds: 92220, phase: 'transit', label: "TLI Burn", description: "Translunar Injection - departing for the Moon.", estimatedDuration: "18m", associatedModule: "ICPS" },
+  { offsetSeconds: 436980, phase: 'lunar', label: "Lunar Flyby", description: "Closest approach to the Lunar surface.", associatedModule: "Orion & ESM" },
+  { offsetSeconds: 783180, phase: 'recovery', label: "Entry Interface", description: "Orion hits atmosphere.", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: 783960, phase: 'splashdown', label: "SPLASHDOWN", description: "Artemis II splashdown in the Pacific Ocean.", associatedModule: "Orion Crew Module" },
 ];
 
 const formatTimeShort = (seconds: number) => {
@@ -132,6 +134,7 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
   const [hoveredEvent, setHoveredEvent] = useState<TimelineEvent | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ top: number, left: number } | null>(null);
 
   const activeIndex = useMemo(() => {
     let bestIdx = -1;
@@ -168,7 +171,7 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
   };
 
   return (
-    <div className={`glass rounded-xl h-full border border-white/10 flex flex-col overflow-hidden shadow-2xl relative ${isCompressed ? 'bg-slate-900/80' : 'bg-slate-900/60'}`}>
+    <div className={`glass rounded-xl h-full border border-white/10 flex flex-col shadow-2xl relative ${isCompressed ? 'bg-slate-900/80' : 'bg-slate-900/60'}`}>
       <div className={`bg-slate-800/80 px-4 py-3 border-b border-white/10 flex items-center justify-between z-10 shrink-0`}>
         <div className="flex flex-col">
           <h3 className="text-[10px] uppercase tracking-[0.25em] font-black text-slate-300">Sequence Monitor</h3>
@@ -198,41 +201,25 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                 <div 
                   key={idx}
                   ref={isActive ? activeItemRef : null}
-                  onMouseEnter={() => setHoveredEvent(event)}
-                  onMouseLeave={() => setHoveredEvent(null)}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const parentRect = scrollRef.current?.getBoundingClientRect();
+                    if (parentRect) {
+                      setHoveredEvent(event);
+                      setHoverPos({ 
+                        top: rect.top - parentRect.top + (rect.height / 2),
+                        left: isCompressed ? -10 : -20 
+                      });
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredEvent(null);
+                    setHoverPos(null);
+                  }}
                   className={`relative flex items-center transition-all duration-300 cursor-help ${
                     isActive ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-4' : 'py-1 opacity-60 hover:opacity-100 hover:bg-white/5'
                   } ${isCompressed ? 'px-2' : 'px-6'}`}
                 >
-                  {isHovered && (
-                    <div className="absolute z-[100] right-[105%] top-1/2 -translate-y-1/2 animate-in fade-in slide-in-from-right-4 zoom-in duration-200">
-                      <div className="bg-slate-950/95 border border-blue-500/50 rounded-xl p-4 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.9)] min-w-[220px] max-w-[280px] overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-[2px] bg-blue-500/40 animate-[scanLine_2s_linear_infinite] pointer-events-none"></div>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border shadow-sm ${getPhaseStyles(hoveredEvent?.phase)}`}>
-                            {hoveredEvent?.phase}
-                          </span>
-                          <span className="text-[10px] mono text-blue-400 font-black tabular-nums">{formatTimeShort(hoveredEvent?.offsetSeconds || 0)}</span>
-                        </div>
-                        <div className="flex items-center space-x-2 mb-2">
-                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                           <h4 className="text-[12px] font-black text-white uppercase tracking-wider">{hoveredEvent?.label}</h4>
-                        </div>
-                        <div className="h-px bg-white/10 my-2"></div>
-                        <div className="flex flex-col space-y-2">
-                          <p className="text-[10px] text-slate-400 leading-relaxed font-medium italic">"{hoveredEvent?.description}"</p>
-                          <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                             <span className="text-[7px] text-slate-600 font-bold uppercase tracking-widest">Stage Status</span>
-                             <span className={`text-[7px] font-black uppercase ${isPast ? 'text-emerald-500' : isActive ? 'text-blue-500' : 'text-slate-500'}`}>
-                                {isPast ? 'Executed' : isActive ? 'Active' : 'Queued'}
-                             </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-slate-950 border-r border-t border-blue-500/50 rotate-45"></div>
-                    </div>
-                  )}
-
                   <div className="relative flex items-center justify-center shrink-0">
                     {isActive && <div className="absolute rounded-full bg-blue-500/30 animate-ping w-10 h-10"></div>}
                     <div className={`relative z-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
@@ -270,6 +257,104 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
         <span>Station: FD_SYNC</span>
         <span className="mono">Epoch: 2026.02.07</span>
       </div>
+
+      {/* Interactive Tooltip Portal-like Overlay */}
+      <AnimatePresence>
+        {hoveredEvent && hoverPos && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 10, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ 
+              position: 'absolute',
+              top: hoverPos.top,
+              right: '100%',
+              marginRight: '12px',
+              transform: 'translateY(-50%)',
+              zIndex: 1000,
+              pointerEvents: 'none'
+            }}
+          >
+            <div className="bg-slate-950/95 border border-blue-500/40 rounded-xl p-4 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)] min-w-[240px] max-w-[300px] relative overflow-hidden">
+              {/* Tactical Accents */}
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-transparent via-blue-500/30 to-transparent"></div>
+              
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-1 bg-blue-500/10 rounded border border-blue-500/20">
+                    <Info size={10} className="text-blue-400" />
+                  </div>
+                  <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border tracking-widest ${getPhaseStyles(hoveredEvent.phase)}`}>
+                    {hoveredEvent.phase}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1 text-blue-400">
+                  <Clock size={10} />
+                  <span className="text-[10px] mono font-black tabular-nums">{formatTimeShort(hoveredEvent.offsetSeconds)}</span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-[13px] font-black text-white uppercase tracking-wider leading-tight mb-1">{hoveredEvent.label}</h4>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-[1px] flex-1 bg-white/10"></div>
+                    <span className="text-[7px] text-slate-600 font-bold uppercase tracking-[0.2em]">Event_ID: {Math.abs(hoveredEvent.offsetSeconds).toString(16).toUpperCase()}</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                  {hoveredEvent.description}
+                </p>
+
+                {/* Detailed Metrics */}
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/5">
+                  {hoveredEvent.estimatedDuration && (
+                    <div className="flex flex-col">
+                      <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Est. Duration</span>
+                      <span className="text-[9px] mono text-blue-400 font-bold">{hoveredEvent.estimatedDuration}</span>
+                    </div>
+                  )}
+                  {hoveredEvent.associatedModule && (
+                    <div className="flex flex-col">
+                      <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Assoc. Module</span>
+                      <span className="text-[9px] mono text-blue-400 font-bold">{hoveredEvent.associatedModule}</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Precise Offset</span>
+                    <span className="text-[9px] mono text-blue-400 font-bold">{hoveredEvent.offsetSeconds.toFixed(2)}s</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Status</span>
+                    <div className="flex items-center space-x-1">
+                      {elapsedSeconds >= hoveredEvent.offsetSeconds ? (
+                        <CheckCircle2 size={10} className="text-emerald-500" />
+                      ) : (
+                        <Activity size={10} className="text-blue-500 animate-pulse" />
+                      )}
+                      <span className={`text-[8px] font-black uppercase ${elapsedSeconds >= hoveredEvent.offsetSeconds ? 'text-emerald-500' : 'text-blue-500'}`}>
+                        {elapsedSeconds >= hoveredEvent.offsetSeconds ? 'Executed' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative Corner */}
+              <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-blue-500/5 rounded-full blur-xl"></div>
+            </div>
+            
+            {/* Pointer Arrow */}
+            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-slate-950 border-r border-t border-blue-500/40 rotate-45 z-[-1]"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes scanLine { 0% { transform: translateY(0); } 100% { transform: translateY(180px); } }

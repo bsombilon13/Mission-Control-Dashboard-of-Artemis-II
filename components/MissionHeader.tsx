@@ -9,8 +9,9 @@ interface Props {
   onOpenSettings: () => void;
   isAudioEnabled: boolean;
   onToggleAudio: () => void;
-  isHoldActive: boolean;
-  onToggleHold: () => void;
+  onOpenNotifications: () => void;
+  notificationCount: number;
+  missionDay: number | null;
 }
 
 interface PhaseConfig {
@@ -107,8 +108,9 @@ const MissionHeader: React.FC<Props> = ({
   onOpenSettings, 
   isAudioEnabled, 
   onToggleAudio,
-  isHoldActive,
-  onToggleHold
+  onOpenNotifications,
+  notificationCount,
+  missionDay
 }) => {
   const [displayPhase, setDisplayPhase] = useState(phase);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -181,6 +183,11 @@ const MissionHeader: React.FC<Props> = ({
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
                 <h1 className="text-xl font-black tracking-tight leading-none text-white uppercase drop-shadow-md">Artemis II</h1>
+                {missionDay !== null && (
+                  <div className="px-2 py-0.5 bg-blue-500/10 rounded border border-blue-500/30">
+                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Day {missionDay}</span>
+                  </div>
+                )}
                 {/* TACTICAL PHASE BADGE */}
                 <div 
                   className={`px-3 py-1 rounded-full border flex items-center space-x-2 transition-all duration-700 ${isTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
@@ -256,17 +263,19 @@ const MissionHeader: React.FC<Props> = ({
           </div>
           
           <div className="flex items-center space-x-2">
-            <button
-              onClick={onToggleHold}
-              className={`px-4 py-2 rounded-xl border font-black uppercase tracking-widest transition-all ${
-                isHoldActive
-                  ? 'bg-red-600 border-red-500 text-white animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]'
-                  : isCritical
-                    ? 'bg-white/10 border-red-500/50 text-red-400 hover:bg-red-600/20'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
-              }`}
+            <button 
+              onClick={onOpenNotifications}
+              className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group relative"
+              title="Mission Advisories"
             >
-              {isHoldActive ? 'RESUME COUNT' : 'HOLD COUNT'}
+              <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+                  {notificationCount}
+                </span>
+              )}
             </button>
 
             <button 
