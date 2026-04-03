@@ -68,6 +68,7 @@ const MissionNotifications: React.FC<Props> = ({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-2xl max-h-[80vh] glass rounded-3xl border border-white/10 flex flex-col bg-slate-900/90 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]"
           >
             {/* Header */}
@@ -108,48 +109,51 @@ const MissionNotifications: React.FC<Props> = ({
                 updates.map((update, idx) => {
                   const styles = getTypeStyles(update.type);
                   return (
-                    <motion.a
+                    <motion.div
                       key={update.id}
-                      href={update.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className={`block p-5 rounded-2xl border ${styles.bg} ${styles.border} ${styles.glow} relative overflow-hidden group/card hover:border-white/20 transition-all cursor-pointer`}
                     >
-                      <div className="absolute top-0 left-0 w-1.5 h-full bg-current opacity-40" style={{ color: styles.text.replace('text-', '') }}></div>
-                      
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-1.5 rounded-lg ${styles.bg} border ${styles.border}`}>
-                            {styles.icon}
+                      <a
+                        href={update.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`block p-5 rounded-2xl border ${styles.bg} ${styles.border} ${styles.glow} relative overflow-hidden group/card hover:border-white/20 transition-all cursor-pointer`}
+                      >
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-current opacity-40" style={{ color: styles.text.replace('text-', '') }}></div>
+                        
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-1.5 rounded-lg ${styles.bg} border ${styles.border}`}>
+                              {styles.icon}
+                            </div>
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${styles.text}`}>
+                              {update.type}
+                            </span>
                           </div>
-                          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${styles.text}`}>
-                            {update.type}
+                          <span className="text-[10px] mono text-slate-500 font-bold tabular-nums">
+                            {new Date(update.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         </div>
-                        <span className="text-[10px] mono text-slate-500 font-bold tabular-nums">
-                          {new Date(update.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      </div>
 
-                      <h4 className="text-base font-black text-white uppercase tracking-wide leading-tight mb-3 group-hover/card:text-blue-400 transition-colors">
-                        {update.title}
-                      </h4>
-                      
-                      <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                        {update.summary}
-                      </p>
+                        <h4 className="text-base font-black text-white uppercase tracking-wide leading-tight mb-3 group-hover/card:text-blue-400 transition-colors">
+                          {update.title}
+                        </h4>
+                        
+                        <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                          {update.summary}
+                        </p>
 
-                      <div className="mt-4 flex items-center justify-between pt-4 border-t border-white/5">
-                        <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Source: NASA.GOV / NEWS</span>
-                        <div className="flex items-center space-x-2 text-blue-400 group-hover/card:translate-x-1 transition-transform">
-                          <span className="text-[10px] font-black uppercase tracking-widest">Access Full Report</span>
-                          <ChevronRight size={12} />
+                        <div className="mt-4 flex items-center justify-between pt-4 border-t border-white/5">
+                          <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">Source: NASA.GOV / NEWS</span>
+                          <div className="flex items-center space-x-2 text-blue-400 group-hover/card:translate-x-1 transition-transform">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Access Full Report</span>
+                            <ChevronRight size={12} />
+                          </div>
                         </div>
-                      </div>
-                    </motion.a>
+                      </a>
+                    </motion.div>
                   );
                 })
               )}

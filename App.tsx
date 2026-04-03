@@ -291,6 +291,7 @@ const App: React.FC = () => {
     setIsNotificationsLoading(true);
     try {
       const data = await fetchMissionUpdates();
+      console.log("Fetched Mission Updates:", data);
       if (data && data.length > 0) {
         setMissionUpdates(data);
         setLastRefreshed(new Date());

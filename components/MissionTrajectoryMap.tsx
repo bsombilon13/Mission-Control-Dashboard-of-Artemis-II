@@ -183,17 +183,29 @@ const MissionTrajectoryMap: React.FC<Props> = ({ elapsedSeconds, hideContainer }
           </svg>
 
           {/* TRAJECTORY HOVER TOOLTIP */}
-          {hoveredId !== null && !selectedMilestone && (
-            <div 
-              className="absolute z-[60] pointer-events-none transform -translate-x-1/2 -translate-y-[110%] animate-in fade-in zoom-in duration-150"
-              style={{ left: `${MILESTONES.find(m => m.id === hoveredId)?.x}%`, top: `${MILESTONES.find(m => m.id === hoveredId)?.y}%` }}
-            >
-              <div className="bg-slate-900/95 border border-blue-500/50 rounded-lg p-2 backdrop-blur-md shadow-2xl min-w-[120px]">
-                 <span className="text-[9px] font-black text-white uppercase">{MILESTONES.find(m => m.id === hoveredId)?.label}</span>
-                 <p className="text-[7px] text-slate-400 font-bold uppercase">{MILESTONES.find(m => m.id === hoveredId)?.shortLabel}</p>
+          {hoveredId !== null && !selectedMilestone && (() => {
+            const m = MILESTONES.find(milestone => milestone.id === hoveredId);
+            if (!m) return null;
+            return (
+              <div 
+                className="absolute z-[60] pointer-events-none transform -translate-x-1/2 -translate-y-[110%] animate-in fade-in zoom-in duration-150"
+                style={{ left: `${m.x}%`, top: `${m.y}%` }}
+              >
+                <div className="bg-slate-950/95 border border-blue-500/50 rounded-xl p-3 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.8)] min-w-[180px] max-w-[240px] relative overflow-hidden">
+                   <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+                   <div className="flex flex-col space-y-2">
+                     <div className="flex flex-col">
+                       <span className="text-[10px] font-black text-white uppercase tracking-wider">{m.label}</span>
+                       <span className="text-[7px] text-blue-400 font-bold uppercase tracking-[0.2em]">{m.shortLabel}</span>
+                     </div>
+                     <div className="h-px bg-white/10 w-full"></div>
+                     <p className="text-[9px] text-slate-300 leading-tight font-medium italic">"{m.objective}"</p>
+                     <p className="text-[8px] text-slate-500 leading-relaxed">{m.description}</p>
+                   </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* LEGEND */}
           <div className="absolute top-2 right-2 flex flex-col space-y-1.5 bg-slate-900/80 backdrop-blur-md border border-white/10 p-2 rounded-lg z-40">
