@@ -26,10 +26,3 @@ export interface TelemetryData {
   fuel: number;
   heartRate: number;
 }
-
-export interface MissionUpdate {
-  time: string;
-  source: string;
-  message: string;
-  type: 'telemetry' | 'comms' | 'system';
-}

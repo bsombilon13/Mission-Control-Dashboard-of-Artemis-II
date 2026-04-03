@@ -17,7 +17,6 @@ const ArowMonitor: React.FC = () => {
           src="https://www.nasa.gov/missions/artemis-ii/arow/"
           className="absolute inset-0 w-full h-full border-0"
           title="NASA AROW"
-          loading="lazy"
         />
       </div>
 

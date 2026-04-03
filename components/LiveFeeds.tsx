@@ -19,7 +19,9 @@ const getEmbedUrl = (id: string) => {
     iv_load_policy: '3',
     modestbranding: '1',
     cc_load_policy: '0',
-    controls: '0'
+    controls: '0',
+    disablekb: '1',
+    fs: '0'
   });
   return `https://www.youtube.com/embed/${id}?${params.toString()}`;
 };
@@ -144,8 +146,8 @@ export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
   }, []);
 
   useEffect(() => {
-    // Fallback to hide loading state if iframe takes too long
-    const timer = setTimeout(() => setIsLoading(false), 8000);
+    // Faster fallback to hide loading state
+    const timer = setTimeout(() => setIsLoading(false), 4000);
     return () => clearTimeout(timer);
   }, [videoId, refreshKey]);
 
@@ -178,7 +180,6 @@ export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
           onLoad={() => setIsLoading(false)}
           className={`w-full h-full border-0 bg-black transition-all duration-1000 ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
           src={embedUrl}
-          loading="lazy"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           referrerPolicy="strict-origin-when-cross-origin"
         ></iframe>
@@ -202,7 +203,7 @@ export const SecondaryFeeds = React.memo(({ videoIds, onPromote, fillContainer }
     setRefreshKeys(videoIds.map(() => 0));
 
     // Fallback for each feed
-    const timers = videoIds.map((_, idx) => setTimeout(() => handleLoad(idx), 8000));
+    const timers = videoIds.map((_, idx) => setTimeout(() => handleLoad(idx), 4000));
     return () => timers.forEach(t => clearTimeout(t));
   }, [videoIds.length]);
 
@@ -278,7 +279,6 @@ export const SecondaryFeeds = React.memo(({ videoIds, onPromote, fillContainer }
               onLoad={() => handleLoad(idx)}
               className={`w-full h-full border-0 bg-black transition-all duration-700 ${loadingStates[idx] ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
               src={getEmbedUrl(id)}
-              loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
               referrerPolicy="strict-origin-when-cross-origin"
             ></iframe>

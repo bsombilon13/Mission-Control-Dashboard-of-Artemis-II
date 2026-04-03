@@ -78,7 +78,12 @@ const MissionNotifications: React.FC<Props> = ({
                   <Bell size={14} className="text-blue-400" />
                   <span>Mission Advisories & Alerts</span>
                 </h3>
-                <span className="text-[9px] text-blue-400/60 font-bold uppercase tracking-widest mt-1">Direct Uplink // NASA Artemis II Newsroom</span>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-[9px] text-blue-400/60 font-bold uppercase tracking-widest">Direct Uplink // NASA Artemis II Newsroom</span>
+                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400 border border-white/5 font-bold uppercase tracking-tighter">
+                    {updates.some(u => u.id.includes('fallback')) ? 'Offline Mode' : 'Live Uplink'}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center space-x-3">
                 <button 
