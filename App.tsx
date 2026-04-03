@@ -15,11 +15,9 @@ const INITIAL_LAUNCH_DATE = new Date('2026-02-07T02:41:00Z');
 const INITIAL_VIDEO_IDS = [
   'nrVnsO_rdew', // NASA TV
   'Jm8wRjD3xVA', // ISS Live
-  '9vX2P4w6u-4', // Artemis Highlights
-  '21X5lGlDOfg', // Starship
 ];
 const HISTORY_LIMIT = 40;
-const STORAGE_KEY = 'artemis_mission_config_v3';
+const STORAGE_KEY = 'artemis_mission_config_v4';
 
 // Tactical Sound Engine
 class MissionAudioEngine {
@@ -134,7 +132,7 @@ const App: React.FC = () => {
       try {
         const config = JSON.parse(saved);
         if (Array.isArray(config.videoIds) && config.videoIds.length > 0) {
-          // Merge saved IDs with defaults to ensure we have exactly 6
+          // Merge saved IDs with defaults to ensure we have exactly 2
           const merged = [...config.videoIds];
           while (merged.length < INITIAL_VIDEO_IDS.length) {
             merged.push(INITIAL_VIDEO_IDS[merged.length]);
@@ -273,13 +271,6 @@ const App: React.FC = () => {
     return () => clearInterval(historyTimer);
   }, []);
 
-  const handlePromoteToPrimary = useCallback((index: number) => {
-    const actualIndex = index + 1;
-    const newVideoIds = [...videoIds];
-    [newVideoIds[0], newVideoIds[actualIndex]] = [newVideoIds[actualIndex], newVideoIds[0]];
-    setVideoIds(newVideoIds);
-  }, [videoIds]);
-
   const handleToggleAudio = () => {
     if (!isAudioEnabled) {
       audioEngine.init();
@@ -399,7 +390,7 @@ const App: React.FC = () => {
 
           <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
             <div className="col-span-12 lg:col-span-4 flex flex-col h-full min-h-0">
-              <MissionVisualFeeds videoIds={videoIds} onPromote={handlePromoteToPrimary} />
+              <MissionVisualFeeds videoIds={videoIds} />
             </div>
 
             <div className="col-span-12 lg:col-span-4 flex flex-col h-full min-h-0">

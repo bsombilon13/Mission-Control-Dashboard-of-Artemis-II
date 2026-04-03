@@ -3,8 +3,6 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 
 interface SharedProps {
   videoIds: string[];
-  onPromote?: (idx: number) => void;
-  fillContainer?: boolean;
 }
 
 const getEmbedUrl = (id: string) => {
@@ -71,7 +69,7 @@ const ControlBar: React.FC<ControlProps> = ({
   }`;
 
   return (
-    <div className={`absolute bottom-3 right-3 flex items-center space-x-2 z-30 transition-all opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 bg-slate-900/95 backdrop-blur-xl p-2 rounded-xl border border-white/10 shadow-2xl`}>
+    <div className={`absolute bottom-3 right-3 flex items-center space-x-2 z-30 transition-all opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 bg-black/95 backdrop-blur-xl p-2 rounded-xl border border-white/10 shadow-2xl`}>
       {onPromote && (
         <button onClick={onPromote} className={`${buttonClass} bg-blue-600/40 border-blue-400/60 text-white hover:bg-blue-500`}>
            {isXS ? 'PRM' : 'Promote'}
@@ -146,8 +144,8 @@ export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
   }, []);
 
   useEffect(() => {
-    // Faster fallback to hide loading state
-    const timer = setTimeout(() => setIsLoading(false), 4000);
+    // Aggressive fallback to hide loading state
+    const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, [videoId, refreshKey]);
 
@@ -182,108 +180,8 @@ export const PrimaryFeed = React.memo(({ videoId }: { videoId: string }) => {
           src={embedUrl}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           referrerPolicy="strict-origin-when-cross-origin"
+          scrolling="no"
         ></iframe>
-    </div>
-  );
-});
-
-export const SecondaryFeeds = React.memo(({ videoIds, onPromote, fillContainer }: SharedProps) => {
-  const [muteStates, setMuteStates] = useState<boolean[]>(videoIds.map(() => true));
-  const [playStates, setPlayStates] = useState<boolean[]>(videoIds.map(() => true));
-  const [loadingStates, setLoadingStates] = useState<boolean[]>(videoIds.map(() => true));
-  const [refreshKeys, setRefreshKeys] = useState<number[]>(videoIds.map(() => 0));
-  
-  const iframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
-  const containerRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    setMuteStates(videoIds.map(() => true));
-    setPlayStates(videoIds.map(() => true));
-    setLoadingStates(videoIds.map(() => true));
-    setRefreshKeys(videoIds.map(() => 0));
-
-    // Fallback for each feed
-    const timers = videoIds.map((_, idx) => setTimeout(() => handleLoad(idx), 4000));
-    return () => timers.forEach(t => clearTimeout(t));
-  }, [videoIds.length]);
-
-  const toggleMute = (idx: number) => {
-    sendCommand(iframeRefs.current[idx], muteStates[idx] ? 'unMute' : 'mute');
-    setMuteStates(prev => {
-        const next = [...prev];
-        next[idx] = !prev[idx];
-        return next;
-    });
-  };
-
-  const togglePlay = (idx: number) => {
-    sendCommand(iframeRefs.current[idx], playStates[idx] ? 'pauseVideo' : 'playVideo');
-    setPlayStates(prev => {
-        const next = [...prev];
-        next[idx] = !prev[idx];
-        return next;
-    });
-  };
-
-  const toggleFullscreen = (idx: number) => {
-    if (!document.fullscreenElement) {
-      containerRefs.current[idx]?.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
-  const handleRefresh = (idx: number) => {
-    setLoadingStates(prev => { const next = [...prev]; next[idx] = true; return next; });
-    setRefreshKeys(prev => { const next = [...prev]; next[idx] += 1; return next; });
-  };
-
-  const handleLoad = (idx: number) => {
-    setLoadingStates(prev => { const next = [...prev]; next[idx] = false; return next; });
-  };
-
-  return (
-    <div className={`grid gap-4 ${fillContainer ? 'h-full' : ''} ${
-      videoIds.length === 3 ? 'grid-cols-3' : 
-      videoIds.length === 1 ? 'grid-cols-1' : 
-      'grid-cols-2'
-    }`}>
-      {videoIds.map((id, idx) => (
-        <div 
-          key={`secondary-feed-${idx}-${id}`} 
-          ref={el => { containerRefs.current[idx] = el; }} 
-          className={`${fillContainer ? 'h-full w-full' : 'aspect-video'} glass rounded-xl overflow-hidden border border-white/10 relative bg-black group shadow-xl hover:ring-2 hover:ring-blue-500/50 transition-all duration-300`}
-        >
-           {loadingStates[idx] && (
-             <div className="absolute inset-0 z-30 bg-slate-950/90 flex items-center justify-center">
-                <div className="w-8 h-8 border-3 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-             </div>
-           )}
-
-           <ControlBar 
-              isMuted={muteStates[idx]} 
-              isPlaying={playStates[idx]} 
-              volume={50}
-              onToggleMute={() => toggleMute(idx)} 
-              onTogglePlay={() => togglePlay(idx)}
-              onVolumeChange={() => {}} 
-              onToggleFullscreen={() => toggleFullscreen(idx)}
-              onRefresh={() => handleRefresh(idx)}
-              onPromote={onPromote ? () => onPromote(idx) : undefined}
-              size="xs" 
-           />
-
-           <iframe
-              ref={el => { iframeRefs.current[idx] = el; }}
-              key={`iframe-secondary-${idx}-${id}-${refreshKeys[idx]}`}
-              onLoad={() => handleLoad(idx)}
-              className={`w-full h-full border-0 bg-black transition-all duration-700 ${loadingStates[idx] ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
-              src={getEmbedUrl(id)}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              referrerPolicy="strict-origin-when-cross-origin"
-            ></iframe>
-        </div>
-      ))}
     </div>
   );
 });
