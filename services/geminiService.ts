@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { MissionPhase, TelemetryData, DsnStatus } from "../types";
+import { MissionPhase, TelemetryData } from "../types";
 
 export interface MissionUpdate {
   id: string;
@@ -16,8 +16,7 @@ let aiInstance: GoogleGenAI | null = null;
 // Cache to prevent redundant calls and handle rate limits
 const cache = {
   briefing: { data: "", timestamp: 0, key: "" },
-  updates: { data: [] as MissionUpdate[], timestamp: 0 },
-  dsn: { data: null as DsnStatus | null, timestamp: 0 }
+  updates: { data: [] as MissionUpdate[], timestamp: 0 }
 };
 
 // Global lock to prevent concurrent Gemini calls which trigger rate limits faster
@@ -37,7 +36,7 @@ function releaseLock() {
   if (next) next();
 }
 
-const CACHE_TTL = 300000; // 5 minutes cache for briefings and DSN
+const CACHE_TTL = 300000; // 5 minutes cache for briefings
 const UPDATES_CACHE_TTL = 900000; // 15 minutes for news updates
 
 function getAI() {
@@ -180,82 +179,5 @@ export async function fetchMissionUpdates(): Promise<MissionUpdate[]> {
   } catch (error: any) {
     console.error("Artemis II: Error fetching mission updates:", error?.message || error);
     return cache.updates.data; // Return stale cache on error
-  }
-}
-
-export async function fetchDsnStatus(): Promise<DsnStatus | null> {
-  const now = Date.now();
-  if (cache.dsn.data && (now - cache.dsn.timestamp) < CACHE_TTL) {
-    return cache.dsn.data;
-  }
-
-  try {
-    const ai = getAI();
-    if (!ai) return null;
-
-    console.log("Artemis II: Fetching DSN status from NASA...");
-    
-    const dsnStatus = await withRetry(async () => {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Current Date: ${new Date().toISOString()}. Extract the current status of the NASA Deep Space Network from https://eyes.nasa.gov/apps/dsn-now/dsn.html. Provide a list of stations (Goldstone, Madrid, Canberra) and the active signals they are handling. For each signal, include the spacecraft name, antenna ID, direction ('up' or 'down'), and signal type (e.g., Telemetry, Command). Return the data as a JSON object with a 'stations' array and a 'timestamp'. Each station object should have 'name', 'location', and a 'signals' array.`,
-        config: {
-          tools: [{ urlContext: {} }, { googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              timestamp: { type: Type.STRING },
-              stations: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    name: { type: Type.STRING },
-                    location: { type: Type.STRING },
-                    signals: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          spacecraft: { type: Type.STRING },
-                          antenna: { type: Type.STRING },
-                          direction: { type: Type.STRING, enum: ["up", "down"] },
-                          type: { type: Type.STRING }
-                        },
-                        required: ["spacecraft", "antenna", "direction", "type"]
-                      }
-                    }
-                  },
-                  required: ["name", "location", "signals"]
-                }
-              }
-            },
-            required: ["timestamp", "stations"]
-          }
-        },
-      });
-
-      let text = response.text;
-      if (!text) return null;
-      
-      text = text.replace(/```json\n?|```/g, "").trim();
-      const lastBrace = text.lastIndexOf('}');
-      if (lastBrace !== -1 && lastBrace < text.length - 1) {
-        text = text.substring(0, lastBrace + 1);
-      }
-      
-      const status = JSON.parse(text);
-      return {
-        stations: status.stations || [],
-        timestamp: status.timestamp || new Date().toISOString(),
-      };
-    });
-
-    cache.dsn = { data: dsnStatus, timestamp: now };
-    return dsnStatus;
-  } catch (error: any) {
-    console.error("Artemis II: Error fetching DSN status:", error?.message || error);
-    return cache.dsn.data; // Return stale cache on error
   }
 }

@@ -26,21 +26,3 @@ export interface TelemetryData {
   fuel: number;
   heartRate: number;
 }
-
-export interface DsnSignal {
-  spacecraft: string;
-  antenna: string;
-  direction: 'up' | 'down';
-  type: string;
-}
-
-export interface DsnStation {
-  name: string;
-  location: string;
-  signals: DsnSignal[];
-}
-
-export interface DsnStatus {
-  stations: DsnStation[];
-  timestamp: string;
-}

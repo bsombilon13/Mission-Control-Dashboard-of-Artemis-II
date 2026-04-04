@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { MissionPhase, TelemetryData, DsnStatus } from './types';
+import { MissionPhase, TelemetryData } from './types';
 import MissionHeader from './components/MissionHeader';
 import MissionVisualFeeds from './components/MissionVisualFeeds';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
 import ArowMonitor from './components/ArowMonitor';
-import DsnMonitor from './components/DsnMonitor';
 import MissionNotifications from './components/MissionNotifications';
 import SettingsPanel from './components/SettingsPanel';
-import { fetchMissionUpdates, MissionUpdate, fetchDsnStatus } from './services/geminiService';
+import { fetchMissionUpdates, MissionUpdate } from './services/geminiService';
 import HorizontalTimeline from './components/HorizontalTimeline';
 import NextMilestoneCard from './components/NextMilestoneCard';
 import MissionScheduleCard from './components/MissionScheduleCard';
@@ -98,8 +97,6 @@ const App: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [missionUpdates, setMissionUpdates] = useState<MissionUpdate[]>([]);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
-  const [dsnStatus, setDsnStatus] = useState<DsnStatus | null>(null);
-  const [isDsnLoading, setIsDsnLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [volume, setVolume] = useState(() => {
@@ -284,12 +281,8 @@ const App: React.FC = () => {
 
   const loadUpdates = useCallback(async () => {
     setIsNotificationsLoading(true);
-    setIsDsnLoading(true);
     try {
-      const [newsData, dsnData] = await Promise.all([
-        fetchMissionUpdates(),
-        fetchDsnStatus()
-      ]);
+      const newsData = await fetchMissionUpdates();
       
       if (newsData && newsData.length > 0) {
         setMissionUpdates(newsData);
@@ -327,15 +320,10 @@ const App: React.FC = () => {
           ];
         });
       }
-
-      if (dsnData) {
-        setDsnStatus(dsnData);
-      }
     } catch (err) {
       console.error("Artemis II: Error loading mission updates:", err);
     } finally {
       setIsNotificationsLoading(false);
-      setIsDsnLoading(false);
     }
   }, []); // Removed missionUpdates.length dependency
 
@@ -408,13 +396,23 @@ const App: React.FC = () => {
                 <MissionVisualFeeds videoIds={videoIds} />
               </div>
               
-              {/* Bottom Row of Left Column: Trajectory & DSN */}
-              <div className="flex-1 grid grid-cols-12 gap-3 min-h-[280px] lg:min-h-0">
-                <div className="col-span-12 sm:col-span-7 h-full">
-                  <ArowMonitor />
+              {/* Bottom Row of Left Column: Trajectory Uplinks */}
+              <div className="flex-1 grid grid-cols-12 gap-3 min-h-[300px] lg:min-h-0">
+                <div className="col-span-12 sm:col-span-6 h-full">
+                  <ArowMonitor 
+                    url="https://www.nasa.gov/missions/artemis-ii/arow/" 
+                    title="Artemis Orbit Uplink"
+                    subtitle="NASA AROW // Live Trajectory"
+                    id="ARW_772"
+                  />
                 </div>
-                <div className="col-span-12 sm:col-span-5 h-full">
-                  <DsnMonitor status={dsnStatus} isLoading={isDsnLoading} />
+                <div className="col-span-12 sm:col-span-6 h-full">
+                  <ArowMonitor 
+                    url="https://www.nasa.gov/missions/artemis-ii/arow/" 
+                    title="Solar System Monitor"
+                    subtitle="NASA AROW // Live Trajectory"
+                    id="EYE_001"
+                  />
                 </div>
               </div>
             </div>
