@@ -54,19 +54,23 @@ const NextMilestoneCard: React.FC<Props> = ({ elapsedSeconds }) => {
         </div>
       }
     >
-      <div className="p-5 flex flex-col justify-center h-full">
-        <h3 className="text-[13px] font-black text-white uppercase truncate tracking-tight mb-2 leading-none">
-          {nextMilestone.label.split(':')[0]}
+      <div className="p-4 flex flex-col justify-center h-full">
+        <h3 className={`text-[11px] font-black uppercase truncate tracking-tight mb-1 leading-none transition-colors duration-500 ${
+          document.documentElement.classList.contains('light') ? 'text-slate-900' : 'text-white'
+        }`}>
+          {nextMilestone.label}
         </h3>
         
         <div className="flex items-baseline space-x-1.5">
-          <span className={`text-3xl font-black mono tabular-nums tracking-tighter leading-none ${
-            isCritical ? 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]' : 'text-white'
+          <span className={`text-2xl font-black mono tabular-nums tracking-tighter leading-none transition-colors duration-500 ${
+            isCritical 
+              ? 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]' 
+              : (document.documentElement.classList.contains('light') ? 'text-slate-900' : 'text-white')
           }`}>
             -{main}
           </span>
-          <span className={`text-sm font-bold mono ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>.{ms}</span>
-          <span className="text-[9px] text-slate-600 font-black uppercase ml-1 tracking-[0.2em]">T-Go</span>
+          <span className={`text-xs font-bold mono transition-colors duration-500 ${isCritical ? 'text-red-400' : 'text-slate-500'}`}>.{ms}</span>
+          <span className="text-[8px] text-slate-600 font-black uppercase ml-1 tracking-[0.2em]">T-Go</span>
         </div>
 
         {/* Mini Progress Bar to next event */}
