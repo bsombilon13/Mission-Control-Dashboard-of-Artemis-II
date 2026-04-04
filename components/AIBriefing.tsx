@@ -24,8 +24,8 @@ const AIBriefing: React.FC<Props> = ({ phase, telemetry, onNewAnalysis }) => {
 
   useEffect(() => {
     fetchBriefing();
-    // Auto refresh every 60 seconds
-    const interval = setInterval(fetchBriefing, 60000);
+    // Auto refresh every 10 minutes
+    const interval = setInterval(fetchBriefing, 600000);
     return () => clearInterval(interval);
   }, [phase]);
 

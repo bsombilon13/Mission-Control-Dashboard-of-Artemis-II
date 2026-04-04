@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { MissionPhase, TelemetryData } from './types';
+import { MissionPhase, TelemetryData, DsnStatus } from './types';
 import MissionHeader from './components/MissionHeader';
 import MissionVisualFeeds from './components/MissionVisualFeeds';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
 import ArowMonitor from './components/ArowMonitor';
+import DsnMonitor from './components/DsnMonitor';
 import MissionNotifications from './components/MissionNotifications';
 import SettingsPanel from './components/SettingsPanel';
-import { fetchMissionUpdates, MissionUpdate } from './services/geminiService';
+import { fetchMissionUpdates, MissionUpdate, fetchDsnStatus } from './services/geminiService';
 import HorizontalTimeline from './components/HorizontalTimeline';
 import NextMilestoneCard from './components/NextMilestoneCard';
+import MissionScheduleCard from './components/MissionScheduleCard';
 
 const INITIAL_LAUNCH_DATE = new Date('2026-02-07T02:41:00Z');
 const INITIAL_VIDEO_IDS = [
@@ -96,6 +98,8 @@ const App: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [missionUpdates, setMissionUpdates] = useState<MissionUpdate[]>([]);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+  const [dsnStatus, setDsnStatus] = useState<DsnStatus | null>(null);
+  const [isDsnLoading, setIsDsnLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [volume, setVolume] = useState(() => {
@@ -280,12 +284,15 @@ const App: React.FC = () => {
 
   const loadUpdates = useCallback(async () => {
     setIsNotificationsLoading(true);
+    setIsDsnLoading(true);
     try {
-      const data = await fetchMissionUpdates();
-      console.log("Artemis II: Fetched Mission Updates:", data);
+      const [newsData, dsnData] = await Promise.all([
+        fetchMissionUpdates(),
+        fetchDsnStatus()
+      ]);
       
-      if (data && data.length > 0) {
-        setMissionUpdates(data);
+      if (newsData && newsData.length > 0) {
+        setMissionUpdates(newsData);
         setLastRefreshed(new Date());
       } else {
         // Only use fallback if we have NO updates at all
@@ -320,16 +327,21 @@ const App: React.FC = () => {
           ];
         });
       }
+
+      if (dsnData) {
+        setDsnStatus(dsnData);
+      }
     } catch (err) {
       console.error("Artemis II: Error loading mission updates:", err);
     } finally {
       setIsNotificationsLoading(false);
+      setIsDsnLoading(false);
     }
   }, []); // Removed missionUpdates.length dependency
 
   useEffect(() => {
     loadUpdates();
-    const interval = setInterval(loadUpdates, 180000); // 3 mins
+    const interval = setInterval(loadUpdates, 900000); // 15 mins
     return () => clearInterval(interval);
   }, [loadUpdates]);
 
@@ -368,48 +380,94 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <MissionHeader 
-          phase={phase} 
-          setPhase={setPhase} 
-          countdownMs={countdownMs} 
-          onOpenSettings={() => setIsSettingsOpen(true)} 
-          isAudioEnabled={isAudioEnabled}
-          onToggleAudio={handleToggleAudio}
-          onOpenNotifications={() => setIsNotificationsOpen(true)}
-          notificationCount={missionUpdates.length}
-          missionDay={missionDay}
-        />
-        
-        <div className="flex-1 p-4 flex flex-col overflow-hidden space-y-4">
-          <div className="shrink-0 flex space-x-4">
-            <NextMilestoneCard elapsedSeconds={elapsedSeconds} />
-            <div className="flex-1">
-              <HorizontalTimeline elapsedSeconds={elapsedSeconds} />
-            </div>
+        <div className="flex flex-col lg:flex-row items-stretch bg-slate-950/50 border-b border-white/10 backdrop-blur-xl z-50">
+          <div className="flex-1">
+            <MissionHeader 
+              phase={phase} 
+              setPhase={setPhase} 
+              countdownMs={countdownMs} 
+              onOpenSettings={() => setIsSettingsOpen(true)} 
+              isAudioEnabled={isAudioEnabled}
+              onToggleAudio={handleToggleAudio}
+              onOpenNotifications={() => setIsNotificationsOpen(true)}
+              notificationCount={missionUpdates.length}
+              missionDay={missionDay}
+              elapsedSeconds={elapsedSeconds}
+            />
           </div>
-
-          <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
-            <div className="col-span-12 lg:col-span-4 flex flex-col h-full min-h-0">
-              <MissionVisualFeeds videoIds={videoIds} />
-            </div>
-
-            <div className="col-span-12 lg:col-span-4 flex flex-col h-full min-h-0">
-              <ArowMonitor />
-            </div>
-
-            <div className="col-span-12 lg:col-span-4 flex h-full min-h-0 space-x-4">
-              <div className="flex-1 min-h-0 h-full">
-                <ArowMonitor />
+        </div>
+        
+        <div className="flex-1 p-2 sm:p-3 flex flex-col overflow-y-auto lg:overflow-hidden space-y-3">
+          {/* Main Dashboard Grid */}
+          <div className="flex-1 grid grid-cols-12 gap-3 min-h-0 lg:overflow-hidden">
+            
+            {/* LEFT COLUMN: PRIMARY MONITORING (Visuals & Telemetry) */}
+            <div className="col-span-12 lg:col-span-8 flex flex-col space-y-3 min-h-0">
+              {/* Top Row of Left Column: Visual Feeds */}
+              <div className="flex-[1.2] min-h-[280px] lg:min-h-0">
+                <MissionVisualFeeds videoIds={videoIds} />
               </div>
+              
+              {/* Bottom Row of Left Column: Trajectory & DSN */}
+              <div className="flex-1 grid grid-cols-12 gap-3 min-h-[280px] lg:min-h-0">
+                <div className="col-span-12 sm:col-span-7 h-full">
+                  <ArowMonitor />
+                </div>
+                <div className="col-span-12 sm:col-span-5 h-full">
+                  <DsnMonitor status={dsnStatus} isLoading={isDsnLoading} />
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: SEQUENCING & SCHEDULING */}
+            <div className="col-span-12 lg:col-span-4 flex flex-col space-y-3 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+              {/* Next Milestone - High Priority */}
+              <div className="shrink-0 h-28">
+                <NextMilestoneCard elapsedSeconds={elapsedSeconds} />
+              </div>
+
+              {/* Mission Trajectory Status (Horizontal Timeline) */}
+              <div className="shrink-0 h-36">
+                <HorizontalTimeline elapsedSeconds={elapsedSeconds} />
+              </div>
+
+              {/* Sequence Monitor (Timeline) */}
               <div 
                 key={`timeline-transition-${displayPhase}`}
-                className={`w-48 shrink-0 h-full min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
+                className={`flex-[1.8] min-h-[250px] lg:min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
               >
-                <MissionTimeline elapsedSeconds={elapsedSeconds} isCompressed={true} />
+                <MissionTimeline elapsedSeconds={elapsedSeconds} />
+              </div>
+
+              {/* Mission Schedule */}
+              <div className="flex-1 min-h-[250px] lg:min-h-0">
+                <MissionScheduleCard elapsedSeconds={elapsedSeconds} />
               </div>
             </div>
           </div>
         </div>
+
+        {/* Global Footer Status Bar */}
+        <footer className="h-8 bg-slate-900/80 border-t border-white/10 flex items-center px-4 justify-between text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 z-50">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span>System Status: Nominal</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+              <span>Uplink: Active</span>
+            </div>
+            <div className="hidden sm:flex items-center space-x-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+              <span>Encryption: AES-256-GCM</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="mono">STATION: JSC_HOUSTON_TX</span>
+            <span className="mono text-slate-400">EPOCH: 2026.04.04 // 11:48:10 UTC</span>
+          </div>
+        </footer>
       </main>
     </div>
   );

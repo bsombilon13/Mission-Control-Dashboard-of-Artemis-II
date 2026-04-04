@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MissionPhase } from '../types';
+import { MISSION_EVENTS } from './MissionTimeline';
 
 interface Props {
   phase: MissionPhase;
@@ -12,6 +13,7 @@ interface Props {
   onOpenNotifications: () => void;
   notificationCount: number;
   missionDay: number | null;
+  elapsedSeconds: number;
 }
 
 interface PhaseConfig {
@@ -110,10 +112,15 @@ const MissionHeader: React.FC<Props> = ({
   onToggleAudio,
   onOpenNotifications,
   notificationCount,
-  missionDay
+  missionDay,
+  elapsedSeconds
 }) => {
   const [displayPhase, setDisplayPhase] = useState(phase);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const nextMilestone = useMemo(() => {
+    return MISSION_EVENTS.find(m => m.offsetSeconds > elapsedSeconds);
+  }, [elapsedSeconds]);
 
   useEffect(() => {
     if (phase !== displayPhase) {
@@ -163,69 +170,83 @@ const MissionHeader: React.FC<Props> = ({
         }}
       ></div>
 
-      <div className="relative px-8 py-4 flex items-center justify-between">
+      <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex flex-col lg:flex-row items-center justify-between space-y-3 lg:space-y-0">
         {/* Mission Brand & Dynamic Phase Badge */}
-        <div className="flex items-center space-x-10">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-5">
+        <div className="flex items-center space-x-4 sm:space-x-10 w-full lg:w-auto justify-between lg:justify-start">
+          <div className="flex items-center space-x-3 sm:space-x-6">
+            <div className="flex items-center space-x-3 sm:space-x-5">
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/e/e5/NASA_logo.svg" 
                 alt="NASA" 
-                className="w-16 h-auto" 
+                className="w-10 sm:w-16 h-auto" 
               />
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/e/e2/Artemis_program_%28original_with_wordmark%29.svg" 
                 alt="Artemis Program" 
-                className="w-14 h-auto brightness-0 invert" 
+                className="w-10 sm:w-14 h-auto brightness-0 invert" 
               />
             </div>
-            <div className="h-8 w-px bg-white/10"></div>
+            <div className="h-6 sm:h-8 w-px bg-white/10"></div>
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-black tracking-tight leading-none text-white uppercase drop-shadow-md">Artemis II</h1>
+                <h1 className="text-lg sm:text-xl font-black tracking-tight leading-none text-white uppercase drop-shadow-md">Artemis II</h1>
                 {missionDay !== null && (
-                  <div className="px-2 py-0.5 bg-blue-500/10 rounded border border-blue-500/30">
-                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Day {missionDay}</span>
+                  <div className="px-1.5 sm:px-2 py-0.5 bg-blue-500/10 rounded border border-blue-500/30">
+                    <span className="text-[7px] sm:text-[9px] font-black text-blue-400 uppercase tracking-widest">Day {missionDay}</span>
                   </div>
                 )}
-                {/* TACTICAL PHASE BADGE */}
-                <div 
-                  className={`px-3 py-1 rounded-full border flex items-center space-x-2 transition-all duration-700 ${isTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
-                  style={{ 
-                    backgroundColor: `${activePhase.color}25`, 
-                    borderColor: `${activePhase.color}80`,
-                    boxShadow: `0 0 15px ${activePhase.color}40` 
-                  }}
-                >
-                  <div className="w-4 h-4" style={{ color: activePhase.color }}>
-                    {activePhase.icon}
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white">
-                    {activePhase.label}
-                  </span>
-                </div>
               </div>
-              <p className="text-[8px] text-white/50 font-bold uppercase tracking-[0.3em] mt-1.5">Launch Operations Control</p>
+              <p className="text-[7px] sm:text-[8px] text-white/50 font-bold uppercase tracking-[0.3em] mt-1 sm:mt-1.5">Launch Control</p>
             </div>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            {/* TACTICAL PHASE BADGE - Compact on mobile */}
+            <div 
+              className={`px-2 sm:px-3 py-1 rounded-full border flex items-center space-x-1.5 sm:space-x-2 transition-all duration-700 ${isTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
+              style={{ 
+                backgroundColor: `${activePhase.color}25`, 
+                borderColor: `${activePhase.color}80`,
+                boxShadow: `0 0 15px ${activePhase.color}40` 
+              }}
+            >
+              <div className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: activePhase.color }}>
+                {activePhase.icon}
+              </div>
+              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.15em] text-white whitespace-nowrap">
+                <span className="hidden xs:inline">{activePhase.label}</span>
+                <span className="xs:hidden">{activePhase.shortLabel}</span>
+              </span>
+            </div>
+
+            {/* NEXT MILESTONE BADGE */}
+            {nextMilestone && (
+              <div className="flex items-center space-x-2 px-2 py-0.5 bg-white/5 rounded border border-white/10">
+                <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse"></div>
+                <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest truncate max-w-[120px] sm:max-w-[200px]">
+                  NEXT: {nextMilestone.label.split(':')[0]}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Master Mission Clock */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-full lg:w-auto">
           <div className="flex items-center space-x-4 mb-1">
             {isCritical ? (
-              <p className="text-[8px] text-red-400 uppercase tracking-[0.5em] font-black animate-pulse">
-                Terminal Count Initiation // Warning
+              <p className="text-[7px] sm:text-[8px] text-red-400 uppercase tracking-[0.3em] sm:tracking-[0.5em] font-black animate-pulse">
+                Terminal Count Initiation
               </p>
             ) : (
-              <p className="text-[8px] text-white/30 uppercase tracking-[0.5em] font-black">
+              <p className="text-[7px] sm:text-[8px] text-white/30 uppercase tracking-[0.3em] sm:tracking-[0.5em] font-black">
                 {isTMinus ? 'Countdown to Liftoff' : 'Mission Elapsed Time'}
               </p>
             )}
           </div>
           
           <div 
-            className={`flex items-baseline font-black mono tracking-tighter tabular-nums transition-all duration-300 relative px-4 py-1 rounded-lg ${
+            className={`flex items-baseline font-black mono tracking-tighter tabular-nums transition-all duration-300 relative px-2 sm:px-4 py-0.5 sm:py-1 rounded-lg ${
               isCritical 
                 ? 'text-white bg-red-600/10 animate-[criticalGlow_0.5s_ease-in-out_infinite_alternate]' 
                 : 'text-white'
@@ -235,24 +256,24 @@ const MissionHeader: React.FC<Props> = ({
               <div className="absolute inset-0 rounded-lg border border-red-500/30 animate-[criticalBorderFlash_0.5s_step-end_infinite]"></div>
             )}
             
-            <span className={`text-4xl font-bold ${isCritical ? 'text-red-100' : 'opacity-40'}`}>
+            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-100' : 'opacity-40'}`}>
               {isTMinus ? 'L-' : 'T+'}
             </span>
-            <span className={`text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.d}</span>
-            <span className={`text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.h}</span>
-            <span className={`text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.m}</span>
-            <span className={`text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.s}</span>
-            <span className={`text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-2xl font-bold ${isCritical ? 'text-red-200' : 'opacity-60'}`}>{timeParts.ms}</span>
+            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.d}</span>
+            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.h}</span>
+            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.m}</span>
+            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-50' : ''}`}>{timeParts.s}</span>
+            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-xl sm:text-2xl font-bold ${isCritical ? 'text-red-200' : 'opacity-60'}`}>{timeParts.ms}</span>
           </div>
         </div>
         
         {/* Settings, Audio & System Status */}
-        <div className="flex items-center space-x-4">
-          <div className="text-right hidden sm:block mr-2">
+        <div className="flex items-center space-x-2 sm:space-x-4 w-full lg:w-auto justify-center lg:justify-end">
+          <div className="text-right hidden md:block mr-2">
             <p className="text-[8px] text-white/40 font-bold uppercase tracking-widest leading-none">System Status</p>
             <div className="flex items-center space-x-2 mt-1 justify-end">
               <p className={`text-[10px] font-black uppercase ${isCritical ? 'text-red-500 animate-pulse' : 'text-emerald-400'}`}>
@@ -262,17 +283,17 @@ const MissionHeader: React.FC<Props> = ({
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             <button 
               onClick={onOpenNotifications}
-              className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group relative"
+              className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg sm:rounded-xl transition-all group relative"
               title="Mission Advisories"
             >
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[7px] sm:text-[8px] font-black w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border border-slate-900 shadow-[0_0_10px_rgba(59,130,246,0.5)]">
                   {notificationCount}
                 </span>
               )}
@@ -280,7 +301,7 @@ const MissionHeader: React.FC<Props> = ({
 
             <button 
               onClick={onToggleAudio}
-              className={`p-2.5 rounded-xl border transition-all group flex items-center justify-center ${
+              className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all group flex items-center justify-center ${
                 isAudioEnabled 
                   ? 'bg-blue-600/20 border-blue-500 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
                   : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
@@ -288,11 +309,11 @@ const MissionHeader: React.FC<Props> = ({
               title={isAudioEnabled ? "Mute Comms" : "Enable Audio Comms"}
             >
               {isAudioEnabled ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               )}
@@ -300,9 +321,9 @@ const MissionHeader: React.FC<Props> = ({
 
             <button 
               onClick={onOpenSettings}
-              className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group"
+              className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg sm:rounded-xl transition-all group"
             >
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-blue-400 group-hover:rotate-45 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-blue-400 group-hover:rotate-45 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               </svg>
             </button>
@@ -311,8 +332,8 @@ const MissionHeader: React.FC<Props> = ({
       </div>
 
       {/* PHASE PROGRESSION BAR */}
-      <div className="relative bg-black/40 border-t border-white/5 px-8 py-3 flex items-center">
-        <div className="flex flex-1 items-center max-w-5xl mx-auto justify-between">
+      <div className="relative bg-black/40 border-t border-white/5 px-4 sm:px-6 py-1.5 sm:py-2 flex items-center overflow-x-auto custom-scrollbar">
+        <div className="flex flex-1 items-center min-w-max lg:min-w-0 max-w-5xl mx-auto justify-between space-x-4 sm:space-x-0">
           {PHASE_CONFIG.map((p, idx) => {
             const isPast = idx < activePhaseIdx;
             const isActive = idx === activePhaseIdx;
@@ -325,7 +346,7 @@ const MissionHeader: React.FC<Props> = ({
                   onClick={() => setPhase(p.id)}
                 >
                   <div 
-                    className={`relative w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-700 ${
+                    className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center border transition-all duration-700 ${
                       isActive 
                         ? `bg-blue-600/20 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-110` 
                         : isPast 
@@ -334,21 +355,21 @@ const MissionHeader: React.FC<Props> = ({
                     }`}
                     style={{ borderColor: isActive ? p.color : undefined }}
                   >
-                    <div className="w-4 h-4 transition-colors duration-500" style={{ color: isActive ? p.color : isPast ? '#94a3b8' : '#475569' }}>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 transition-colors duration-500" style={{ color: isActive ? p.color : isPast ? '#94a3b8' : '#475569' }}>
                       {p.icon}
                     </div>
                     {isActive && (
-                      <div className="absolute -inset-1 rounded-xl border border-blue-500/20 animate-ping opacity-40"></div>
+                      <div className="absolute -inset-1 rounded-lg sm:rounded-xl border border-blue-500/20 animate-ping opacity-40"></div>
                     )}
                   </div>
                   
-                  <div className="ml-3 hidden lg:flex flex-col">
-                    <span className={`text-[8px] font-black uppercase tracking-widest transition-colors duration-500 ${
+                  <div className="ml-2 sm:ml-3 hidden md:flex flex-col">
+                    <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest transition-colors duration-500 ${
                       isActive ? 'text-white' : 'text-slate-500'
                     }`}>
                       {p.shortLabel}
                     </span>
-                    <span className={`text-[7px] font-bold uppercase transition-colors duration-500 ${
+                    <span className={`text-[6px] sm:text-[7px] font-bold uppercase transition-colors duration-500 ${
                       isActive ? 'text-blue-400' : 'text-slate-700'
                     }`} style={{ color: isActive ? p.color : undefined }}>
                       {isActive ? 'Current' : isPast ? 'Complete' : 'Pending'}
@@ -358,7 +379,7 @@ const MissionHeader: React.FC<Props> = ({
 
                 {/* Connector */}
                 {idx < PHASE_CONFIG.length - 1 && (
-                  <div className="flex-1 h-px mx-4 relative overflow-hidden bg-white/5">
+                  <div className="flex-1 min-w-[1rem] sm:min-w-[2rem] h-px mx-2 sm:mx-4 relative overflow-hidden bg-white/5">
                     <div 
                       className={`absolute inset-0 transition-all duration-[2000ms] ${isPast ? 'bg-blue-500' : isActive ? 'bg-gradient-to-r from-blue-500 to-transparent animate-[progressSweep_3s_linear_infinite]' : 'bg-transparent'}`}
                       style={{ backgroundColor: isPast ? p.color : undefined }}

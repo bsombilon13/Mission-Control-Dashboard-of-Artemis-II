@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --breakpoint-xs: 480px;
+}
+
 :root {
     --slate-950: #020617;
     --blue-500: #3b82f6;
@@ -23,6 +27,19 @@ body {
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+.tactical-corner {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-color: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+.tactical-corner-tl { top: 0; left: 0; border-top: 1px solid; border-left: 1px solid; }
+.tactical-corner-tr { top: 0; right: 0; border-top: 1px solid; border-right: 1px solid; }
+.tactical-corner-bl { bottom: 0; left: 0; border-bottom: 1px solid; border-left: 1px solid; }
+.tactical-corner-br { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
 
 .glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
 .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }

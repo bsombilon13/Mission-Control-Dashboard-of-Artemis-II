@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import TacticalCard from './TacticalCard';
 import { TimelineEvent } from '../types';
 import { Info, Clock, Activity, CheckCircle2, Circle } from 'lucide-react';
 
@@ -149,12 +150,15 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
   }, [elapsedSeconds]);
 
   useEffect(() => {
-    if (activeItemRef.current) {
-      activeItemRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
+    const timer = setTimeout(() => {
+      if (activeItemRef.current) {
+        activeItemRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [activeIndex]);
 
   const getPhaseStyles = (phase?: string) => {
@@ -171,27 +175,28 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
   };
 
   return (
-    <div className={`glass rounded-xl h-full border border-white/10 flex flex-col shadow-2xl relative ${isCompressed ? 'bg-slate-900/80' : 'bg-slate-900/60'}`}>
-      <div className={`bg-slate-800/80 px-4 py-3 border-b border-white/10 flex items-center justify-between z-10 shrink-0`}>
-        <div className="flex flex-col">
-          <h3 className="text-[10px] uppercase tracking-[0.25em] font-black text-slate-300">Sequence Monitor</h3>
-          {!isCompressed && <span className="text-[9px] text-blue-400 font-bold italic mt-0.5 tracking-tighter uppercase">High-Fidelity Flight Profile</span>}
+    <TacticalCard
+      title="Sequence Monitor"
+      subtitle="High-Fidelity Flight Profile"
+      icon={<Activity className="w-3.5 h-3.5" />}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span className="text-emerald-400">Telemetry Locked</span>
+          </div>
+          <span className="mono text-slate-600">SYNC_ID: {Math.abs(elapsedSeconds).toString(16).toUpperCase()}</span>
         </div>
-        <div className="flex items-center space-x-2">
-           <div className={`px-2 py-0.5 bg-emerald-500/10 rounded border border-emerald-500/30`}>
-              <span className="text-[8px] mono text-emerald-400 font-black animate-pulse uppercase tracking-wider">Telemetry Locked</span>
-           </div>
-        </div>
-      </div>
-      
+      }
+    >
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar bg-black/30"
+        className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-black/30"
       >
-        <div className={`relative ${isCompressed ? 'py-4' : 'py-8'}`}>
-          <div className={`absolute top-0 bottom-0 w-0.5 bg-white/5 ${isCompressed ? 'left-[18px]' : 'left-[34px]'}`}></div>
+        <div className={`relative ${isCompressed ? 'py-4' : 'py-6'}`}>
+          <div className={`absolute top-0 bottom-0 w-px bg-white/5 ${isCompressed ? 'left-[18px]' : 'left-[34px]'}`}></div>
           
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {MISSION_EVENTS.map((event, idx) => {
               const isActive = idx === activeIndex;
               const isPast = idx < activeIndex;
@@ -217,15 +222,15 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                     setHoverPos(null);
                   }}
                   className={`relative flex items-center transition-all duration-300 cursor-help ${
-                    isActive ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-4' : 'py-1 opacity-60 hover:opacity-100 hover:bg-white/5'
+                    isActive ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-5 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' : 'py-1.5 opacity-60 hover:opacity-100 hover:bg-white/5'
                   } ${isCompressed ? 'px-2' : 'px-6'}`}
                 >
                   <div className="relative flex items-center justify-center shrink-0">
-                    {isActive && <div className="absolute rounded-full bg-blue-500/30 animate-ping w-10 h-10"></div>}
+                    {isActive && <div className="absolute rounded-full bg-blue-500/30 animate-ping w-12 h-12"></div>}
                     <div className={`relative z-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                      isActive ? 'w-6 h-6 bg-blue-500 border-white shadow-[0_0_15px_rgba(59,130,246,0.8)]' : isPast ? 'w-3 h-3 bg-emerald-500 border-emerald-300' : 'w-3 h-3 bg-slate-800 border-slate-600'
+                      isActive ? 'w-7 h-7 bg-blue-500 border-white shadow-[0_0_20px_rgba(59,130,246,0.8)]' : isPast ? 'w-3 h-3 bg-emerald-500 border-emerald-300' : 'w-3 h-3 bg-slate-800 border-slate-600'
                     }`}>
-                      {isActive && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                      {isActive && <div className="w-2.5 h-2.5 bg-white rounded-full shadow-inner"></div>}
                     </div>
                   </div>
 
@@ -233,17 +238,35 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                     <div className="flex flex-col">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex flex-col truncate">
-                          <span className={`font-bold transition-colors truncate ${isCompressed ? 'text-[10px]' : 'text-[12px]'} ${isActive ? 'text-white' : isPast ? 'text-slate-300' : 'text-slate-500'}`}>
+                          <span className={`font-black transition-colors truncate uppercase tracking-tight ${isCompressed ? 'text-[10px]' : 'text-[12px]'} ${isActive ? 'text-white' : isPast ? 'text-slate-300' : 'text-slate-500'}`}>
                             {event.label}
                           </span>
-                          {!isCompressed && event.phase && <span className={`text-[7px] font-black uppercase tracking-tighter ${getPhaseStyles(event.phase).split(' ')[0]}`}>{event.phase}</span>}
+                          {!isCompressed && event.phase && (
+                            <div className="flex items-center space-x-2 mt-0.5">
+                              <span className={`text-[7px] font-black uppercase tracking-widest ${getPhaseStyles(event.phase).split(' ')[0]}`}>{event.phase}</span>
+                              <div className="w-1 h-1 rounded-full bg-white/10"></div>
+                              <span className="text-[7px] text-slate-600 font-bold uppercase tracking-widest">ID: {Math.abs(event.offsetSeconds).toString(16).toUpperCase()}</span>
+                            </div>
+                          )}
                         </div>
-                        <span className={`mono tabular-nums shrink-0 font-bold ${isCompressed ? 'text-[8px]' : 'text-[10px]'} ${isActive ? 'text-blue-300' : 'text-slate-600'}`}>
+                        <span className={`mono tabular-nums shrink-0 font-black tracking-tighter ${isCompressed ? 'text-[9px]' : 'text-[11px]'} ${isActive ? 'text-blue-300' : 'text-slate-600'}`}>
                           {formatTimeShort(event.offsetSeconds)}
                         </span>
                       </div>
-                      {isActive && !isCompressed && <p className="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-sm">{event.description}</p>}
-                      {isActive && <div className="mt-2 h-[2px] w-full bg-blue-500/20 rounded-full overflow-hidden"><div className="h-full bg-blue-400 animate-[progress_3s_linear_infinite]" style={{ width: '40%' }}></div></div>}
+                      {isActive && !isCompressed && (
+                        <motion.p 
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-[11px] text-slate-400 mt-2 leading-relaxed max-w-sm font-medium"
+                        >
+                          {event.description}
+                        </motion.p>
+                      )}
+                      {isActive && (
+                        <div className="mt-3 h-[2px] w-full bg-blue-500/20 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-400 animate-[progress_3s_linear_infinite] shadow-[0_0_10px_rgba(96,165,250,0.5)]" style={{ width: '40%' }}></div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -360,7 +383,7 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
         @keyframes scanLine { 0% { transform: translateY(0); } 100% { transform: translateY(180px); } }
         @keyframes progress { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
       `}</style>
-    </div>
+    </TacticalCard>
   );
 };
 
