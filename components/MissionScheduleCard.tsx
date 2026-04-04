@@ -100,7 +100,7 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
         </div>
       }
     >
-      <div ref={scrollRef} className="h-full overflow-y-auto p-2 space-y-1.5 custom-scrollbar bg-black/10">
+      <div ref={scrollRef} className="h-full overflow-y-auto p-1 space-y-0.5 custom-scrollbar bg-black/10">
         {SCHEDULE.map((event, i) => {
           const isActive = i === activeIndex;
           const isPast = i < activeIndex;
@@ -109,56 +109,64 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
             <div
               key={i}
               ref={isActive ? activeRef : null}
-              className={`relative flex items-center p-2 rounded-xl transition-all duration-300 ${
+              className={`relative flex items-center p-1 rounded-lg transition-all duration-300 ${
                 isActive 
-                  ? 'bg-blue-600/20 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)] scale-[1.02] z-10' 
+                  ? 'bg-blue-600/20 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)] scale-[1.01] z-10' 
                   : isPast 
                     ? 'opacity-40 grayscale hover:opacity-70 hover:grayscale-0' 
                     : 'opacity-60 hover:opacity-90'
               }`}
             >
-              <div className="flex flex-col shrink-0 w-20">
-                <span className={`text-[8px] mono font-black tracking-tighter ${isActive ? 'text-blue-300' : 'text-slate-500'}`}>
+              <div className="flex flex-col shrink-0 w-16">
+                <span className={`text-[7px] mono font-black tracking-tighter ${isActive ? 'text-blue-300' : 'text-slate-500'}`}>
                   MET {formatMET(event.met)}
                 </span>
               </div>
 
-              <div className="mx-4 flex flex-col items-center shrink-0">
-                <div className={`w-2 h-2 rounded-full transition-all duration-500 ${
-                  isActive ? 'bg-blue-400 animate-pulse ring-4 ring-blue-400/20' : isPast ? 'bg-emerald-500' : 'bg-slate-700'
-                }`} />
+              <div className="mx-2 flex flex-col items-center shrink-0">
+                <div className={`flex items-center justify-center rounded-full transition-all duration-500 ${
+                  isActive 
+                    ? 'w-2 h-2 bg-blue-400 animate-pulse ring-2 ring-blue-400/20' 
+                    : isPast 
+                      ? 'w-3 h-3 bg-emerald-500/20 border border-emerald-500/40' 
+                      : 'w-1.5 h-1.5 bg-slate-700'
+                }`}>
+                  {isPast && <CheckCircle2 size={8} className="text-emerald-500" />}
+                </div>
                 {i < SCHEDULE.length - 1 && (
-                  <div className={`w-px h-6 mt-1 ${isPast ? 'bg-emerald-500/30' : 'bg-slate-800'}`} />
+                  <div className={`w-px h-3 mt-0.5 ${isPast ? 'bg-emerald-500/30' : 'bg-slate-800'}`} />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2">
-                  <div className={`p-1 rounded ${isActive ? 'bg-blue-500/20' : 'bg-slate-800/50'}`}>
-                    {event.type === 'crew' ? <User size={10} className="text-amber-400" /> : <Target size={10} className="text-blue-400" />}
+                <div className="flex items-center space-x-1.5">
+                  <div className={`p-0.5 rounded ${isActive ? 'bg-blue-500/20' : 'bg-slate-800/50'}`}>
+                    {event.type === 'crew' ? <User size={8} className="text-amber-400" /> : <Target size={8} className="text-blue-400" />}
                   </div>
                   <div className="flex flex-col truncate">
-                    <span className={`text-[11px] font-black truncate uppercase tracking-wider ${isActive ? 'text-white' : 'text-slate-300'}`}>
-                      {event.label}
-                    </span>
+                    <div className="flex items-center space-x-1">
+                      <span className={`text-[10px] font-black truncate uppercase tracking-wider ${isActive ? 'text-white' : isPast ? 'text-slate-400' : 'text-slate-300'}`}>
+                        {event.label}
+                      </span>
+                      {isPast && <CheckCircle2 size={8} className="text-emerald-500/70 shrink-0" />}
+                    </div>
                     {event.duration && (
-                      <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Duration: {event.duration / 60}m</span>
+                      <span className="text-[6px] text-slate-500 font-bold uppercase tracking-widest">Duration: {event.duration / 60}m</span>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 ml-4">
+              <div className="flex items-center space-x-1 ml-2">
                 {isPast && (
-                  <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-emerald-500/10 rounded border border-emerald-500/20">
-                    <CheckCircle2 size={8} className="text-emerald-500" />
-                    <span className="text-[7px] text-emerald-500 font-black uppercase">Complete</span>
+                  <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-emerald-500/10 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                    <span className="text-[6px] text-emerald-500 font-black uppercase tracking-tighter">Completed</span>
                   </div>
                 )}
                 {isActive && (
-                  <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-blue-500/20 rounded border border-blue-500/30 animate-pulse">
-                    <Zap size={8} className="text-blue-400" />
-                    <span className="text-[7px] text-blue-400 font-black uppercase">Active</span>
+                  <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-blue-500/20 rounded border border-blue-500/30 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                    <Zap size={7} className="text-blue-400" />
+                    <span className="text-[6px] text-blue-400 font-black uppercase tracking-tighter">Active</span>
                   </div>
                 )}
               </div>

@@ -191,7 +191,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
     >
       <div 
         ref={scrollRef}
-        className="h-full overflow-y-auto scroll-smooth custom-scrollbar bg-black/30"
+        className={`h-full overflow-y-auto scroll-smooth custom-scrollbar transition-colors duration-500 ${
+          document.documentElement.classList.contains('light') ? 'bg-slate-50/50' : 'bg-black/30'
+        }`}
       >
         <div className={`relative ${isCompressed ? 'py-4' : 'py-6'}`}>
           <div className={`absolute top-0 bottom-0 w-px bg-white/5 ${isCompressed ? 'left-[18px]' : 'left-[34px]'}`}></div>
@@ -222,7 +224,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                     setHoverPos(null);
                   }}
                   className={`relative flex items-center transition-all duration-300 cursor-help ${
-                    isActive ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-5 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' : 'py-1.5 opacity-60 hover:opacity-100 hover:bg-white/5'
+                    isActive 
+                      ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-5 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' 
+                      : `py-1.5 opacity-60 hover:opacity-100 ${document.documentElement.classList.contains('light') ? 'hover:bg-slate-200/50' : 'hover:bg-white/5'}`
                   } ${isCompressed ? 'px-2' : 'px-6'}`}
                 >
                   <div className="relative flex items-center justify-center shrink-0">
@@ -238,7 +242,13 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                     <div className="flex flex-col">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex flex-col truncate">
-                          <span className={`font-black transition-colors truncate uppercase tracking-tight ${isCompressed ? 'text-[10px]' : 'text-[12px]'} ${isActive ? 'text-white' : isPast ? 'text-slate-300' : 'text-slate-500'}`}>
+                          <span className={`font-black transition-colors truncate uppercase tracking-tight ${isCompressed ? 'text-[10px]' : 'text-[12px]'} ${
+                            isActive 
+                              ? (document.documentElement.classList.contains('light') ? 'text-blue-700' : 'text-white') 
+                              : isPast 
+                                ? (document.documentElement.classList.contains('light') ? 'text-slate-600' : 'text-slate-300') 
+                                : (document.documentElement.classList.contains('light') ? 'text-slate-400' : 'text-slate-500')
+                          }`}>
                             {event.label}
                           </span>
                           {!isCompressed && event.phase && (
@@ -257,7 +267,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                         <motion.p 
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="text-[11px] text-slate-400 mt-2 leading-relaxed max-w-sm font-medium"
+                          className={`text-[11px] mt-2 leading-relaxed max-w-sm font-medium transition-colors duration-500 ${
+                            document.documentElement.classList.contains('light') ? 'text-slate-600' : 'text-slate-400'
+                          }`}
                         >
                           {event.description}
                         </motion.p>
@@ -276,7 +288,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
         </div>
       </div>
       
-      <div className={`bg-slate-900 border-t border-white/10 px-4 py-2 flex justify-between items-center text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 shrink-0`}>
+      <div className={`border-t px-4 py-2 flex justify-between items-center text-[9px] font-bold uppercase tracking-[0.2em] shrink-0 transition-colors duration-500 ${
+        document.documentElement.classList.contains('light') ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-900 border-white/10 text-slate-500'
+      }`}>
         <span>Station: FD_SYNC</span>
         <span className="mono">Epoch: 2026.02.07</span>
       </div>
@@ -299,7 +313,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
               pointerEvents: 'none'
             }}
           >
-            <div className="bg-slate-950/95 border border-blue-500/40 rounded-xl p-4 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)] min-w-[240px] max-w-[300px] relative overflow-hidden">
+            <div className={`border rounded-xl p-4 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)] min-w-[240px] max-w-[300px] relative overflow-hidden transition-colors duration-500 ${
+              document.documentElement.classList.contains('light') ? 'bg-white/95 border-slate-200' : 'bg-slate-950/95 border-blue-500/40'
+            }`}>
               {/* Tactical Accents */}
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
               <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
@@ -324,14 +340,18 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
               {/* Content */}
               <div className="space-y-3">
                 <div>
-                  <h4 className="text-[13px] font-black text-white uppercase tracking-wider leading-tight mb-1">{hoveredEvent.label}</h4>
+                  <h4 className={`text-[13px] font-black uppercase tracking-wider leading-tight mb-1 transition-colors duration-500 ${
+                    document.documentElement.classList.contains('light') ? 'text-slate-900' : 'text-white'
+                  }`}>{hoveredEvent.label}</h4>
                   <div className="flex items-center space-x-2">
                     <div className="h-[1px] flex-1 bg-white/10"></div>
                     <span className="text-[7px] text-slate-600 font-bold uppercase tracking-[0.2em]">Event_ID: {Math.abs(hoveredEvent.offsetSeconds).toString(16).toUpperCase()}</span>
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                <p className={`text-[11px] leading-relaxed font-medium transition-colors duration-500 ${
+                  document.documentElement.classList.contains('light') ? 'text-slate-600' : 'text-slate-300'
+                }`}>
                   {hoveredEvent.description}
                 </p>
 
@@ -374,7 +394,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
             </div>
             
             {/* Pointer Arrow */}
-            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-slate-950 border-r border-t border-blue-500/40 rotate-45 z-[-1]"></div>
+            <div className={`absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 border-r border-t rotate-45 z-[-1] transition-colors duration-500 ${
+              document.documentElement.classList.contains('light') ? 'bg-white border-slate-200' : 'bg-slate-950 border-blue-500/40'
+            }`}></div>
           </motion.div>
         )}
       </AnimatePresence>

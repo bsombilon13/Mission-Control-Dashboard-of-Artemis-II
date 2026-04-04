@@ -18,7 +18,7 @@ const INITIAL_VIDEO_IDS = [
   'Jm8wRjD3xVA', // ISS Live
 ];
 const HISTORY_LIMIT = 40;
-const STORAGE_KEY = 'artemis_mission_config_v4';
+const STORAGE_KEY = 'artemis_mission_config_v5';
 
 // Tactical Sound Engine
 class MissionAudioEngine {
@@ -112,6 +112,16 @@ const App: React.FC = () => {
   
   const [isPhaseTransitioning, setIsPhaseTransitioning] = useState(false);
   const [displayPhase, setDisplayPhase] = useState<MissionPhase>(MissionPhase.PRE_LAUNCH);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const config = JSON.parse(saved);
+        if (config.theme) return config.theme;
+      } catch (e) {}
+    }
+    return 'dark';
+  });
 
   const [launchDate, setLaunchDate] = useState<Date>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -198,11 +208,21 @@ const App: React.FC = () => {
     const config = {
       videoIds,
       launchDate: launchDate.toISOString(),
-      volume
+      volume,
+      theme
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
     audioEngine.setVolume(volume);
-  }, [videoIds, launchDate, volume]);
+    
+    // Apply theme to document
+    if (theme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+      document.documentElement.classList.add('dark');
+    }
+  }, [videoIds, launchDate, volume, theme]);
 
   useEffect(() => {
     setTelemetryHistory([]);
@@ -340,7 +360,9 @@ const App: React.FC = () => {
   }, [elapsedSeconds]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden relative">
+    <div className={`flex flex-col h-screen overflow-hidden relative transition-colors duration-500 ${
+      theme === 'dark' ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'
+    }`}>
       <div className="fixed inset-0 pointer-events-none z-[9999] opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,3px_100%]"></div>
 
       {isSettingsOpen && (
@@ -348,10 +370,12 @@ const App: React.FC = () => {
           videoIds={videoIds} 
           launchDate={launchDate} 
           volume={volume}
-          onSave={(ids, newDate, newVolume) => {
+          theme={theme}
+          onSave={(ids, newDate, newVolume, newTheme) => {
             setVideoIds(ids);
             setLaunchDate(newDate);
             setVolume(newVolume);
+            setTheme(newTheme);
             setIsSettingsOpen(false);
           }} 
           onClose={() => setIsSettingsOpen(false)} 
@@ -368,7 +392,9 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex flex-col lg:flex-row items-stretch bg-slate-950/50 border-b border-white/10 backdrop-blur-xl z-50">
+        <div className={`flex flex-col lg:flex-row items-stretch border-b backdrop-blur-xl z-50 transition-colors duration-500 ${
+          theme === 'dark' ? 'bg-slate-950/50 border-white/10' : 'bg-white/70 border-slate-200'
+        }`}>
           <div className="flex-1">
             <MissionHeader 
               phase={phase} 
@@ -381,6 +407,7 @@ const App: React.FC = () => {
               notificationCount={missionUpdates.length}
               missionDay={missionDay}
               elapsedSeconds={elapsedSeconds}
+              theme={theme}
             />
           </div>
         </div>
@@ -390,7 +417,7 @@ const App: React.FC = () => {
           <div className="flex-1 grid grid-cols-12 gap-3 min-h-0 lg:overflow-hidden">
             
             {/* LEFT COLUMN: PRIMARY MONITORING (Visuals & Telemetry) */}
-            <div className="col-span-12 lg:col-span-8 flex flex-col space-y-3 min-h-0">
+            <div className="col-span-12 lg:col-span-7 flex flex-col space-y-3 min-h-0">
               {/* Top Row of Left Column: Visual Feeds */}
               <div className="flex-[1.2] min-h-[280px] lg:min-h-0">
                 <MissionVisualFeeds videoIds={videoIds} />
@@ -418,7 +445,7 @@ const App: React.FC = () => {
             </div>
 
             {/* RIGHT COLUMN: SEQUENCING & SCHEDULING */}
-            <div className="col-span-12 lg:col-span-4 flex flex-col space-y-3 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+            <div className="col-span-12 lg:col-span-5 flex flex-col space-y-3 min-h-0 pr-1">
               {/* Next Milestone - High Priority */}
               <div className="shrink-0 h-28">
                 <NextMilestoneCard elapsedSeconds={elapsedSeconds} />
@@ -429,24 +456,29 @@ const App: React.FC = () => {
                 <HorizontalTimeline elapsedSeconds={elapsedSeconds} />
               </div>
 
-              {/* Sequence Monitor (Timeline) */}
-              <div 
-                key={`timeline-transition-${displayPhase}`}
-                className={`flex-[1.8] min-h-[250px] lg:min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
-              >
-                <MissionTimeline elapsedSeconds={elapsedSeconds} />
-              </div>
+              {/* Sequence Monitor & Mission Schedule Side-by-Side */}
+              <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Sequence Monitor (Timeline) */}
+                <div 
+                  key={`timeline-transition-${displayPhase}`}
+                  className={`h-full min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
+                >
+                  <MissionTimeline elapsedSeconds={elapsedSeconds} />
+                </div>
 
-              {/* Mission Schedule */}
-              <div className="flex-1 min-h-[250px] lg:min-h-0">
-                <MissionScheduleCard elapsedSeconds={elapsedSeconds} />
+                {/* Mission Schedule */}
+                <div className="h-full min-h-0">
+                  <MissionScheduleCard elapsedSeconds={elapsedSeconds} />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Global Footer Status Bar */}
-        <footer className="h-8 bg-slate-900/80 border-t border-white/10 flex items-center px-4 justify-between text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 z-50">
+        <footer className={`h-8 border-t flex items-center px-4 justify-between text-[8px] font-black uppercase tracking-[0.2em] z-50 transition-colors duration-500 ${
+          theme === 'dark' ? 'bg-slate-900/80 border-white/10 text-slate-500' : 'bg-slate-100/80 border-slate-200 text-slate-600'
+        }`}>
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>

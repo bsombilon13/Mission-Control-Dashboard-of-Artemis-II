@@ -31,7 +31,9 @@ const ArowMonitor: React.FC<Props> = ({
         </div>
       }
     >
-      <div className="relative w-full h-full bg-black overflow-hidden">
+      <div className={`relative w-full h-full overflow-hidden transition-colors duration-500 ${
+        document.documentElement.classList.contains('light') ? 'bg-slate-100' : 'bg-black'
+      }`}>
         <iframe
           src={url}
           className="w-full h-full border-0 grayscale-[0.2] hover:grayscale-0 transition-all duration-700"

@@ -27,7 +27,9 @@ const MissionVisualFeeds: React.FC<Props> = ({ videoIds }) => {
         </div>
       }
     >
-      <div className="h-full p-2 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 bg-black/20">
+      <div className={`h-full p-2 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 transition-colors duration-500 ${
+        document.documentElement.classList.contains('light') ? 'bg-slate-50/50' : 'bg-black/20'
+      }`}>
         <div className="flex-1 min-h-0 relative group">
           <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-blue-600/80 backdrop-blur-md text-[8px] font-black text-white rounded border border-blue-400/30 shadow-lg uppercase tracking-widest">CAM-01 // UP</div>
           <PrimaryFeed videoId={videoIds[0]} />

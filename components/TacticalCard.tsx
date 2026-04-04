@@ -24,7 +24,9 @@ const TacticalCard: React.FC<TacticalCardProps> = ({
 }) => {
   return (
     <div className={`glass rounded-xl border transition-all duration-500 flex flex-col h-full relative overflow-hidden group ${
-      isCritical ? 'border-red-500/30 bg-red-950/10' : 'border-white/10 hover:border-blue-500/30'
+      isCritical 
+        ? 'border-red-500/30 bg-red-950/10' 
+        : 'border-white/10 dark:border-white/10 border-slate-200 hover:border-blue-500/30 dark:hover:border-blue-500/30'
     } ${className}`}>
       {/* Corner Accents */}
       <div className="tactical-corner tactical-corner-tl opacity-40 group-hover:opacity-100 transition-opacity"></div>
@@ -33,10 +35,12 @@ const TacticalCard: React.FC<TacticalCardProps> = ({
       <div className="tactical-corner tactical-corner-br opacity-40 group-hover:opacity-100 transition-opacity"></div>
 
       {/* Card Header */}
-      <div className="px-4 py-3 border-b border-white/5 bg-black/20 flex items-center justify-between shrink-0 z-10">
+      <div className="px-4 py-3 border-b border-white/5 dark:border-white/5 bg-black/20 dark:bg-black/20 light:bg-slate-50 flex items-center justify-between shrink-0 z-10">
         <div className="flex flex-col">
-          <h3 className={`text-[10px] uppercase tracking-[0.3em] font-black drop-shadow-lg ${
-            isCritical ? 'text-red-400' : 'text-slate-200 group-hover:text-white transition-colors'
+          <h3 className={`text-[10px] uppercase tracking-[0.3em] font-black drop-shadow-lg transition-colors ${
+            isCritical 
+              ? 'text-red-400' 
+              : 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-white'
           }`}>
             {title}
           </h3>
@@ -72,7 +76,7 @@ const TacticalCard: React.FC<TacticalCardProps> = ({
 
       {/* Card Footer */}
       {footer && (
-        <div className="px-4 py-2 bg-black/40 border-t border-white/5 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.25em] text-slate-500 shrink-0 z-10">
+        <div className="px-4 py-2 bg-black/40 dark:bg-black/40 border-t border-white/5 dark:border-white/5 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.25em] text-slate-500 dark:text-slate-500 shrink-0 z-10">
           {footer}
         </div>
       )}

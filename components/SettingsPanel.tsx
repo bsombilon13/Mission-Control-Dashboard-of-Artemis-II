@@ -5,13 +5,15 @@ interface Props {
   videoIds: string[];
   launchDate: Date;
   volume: number;
-  onSave: (ids: string[], newLaunchDate: Date, newVolume: number) => void;
+  theme: 'dark' | 'light';
+  onSave: (ids: string[], newLaunchDate: Date, newVolume: number, newTheme: 'dark' | 'light') => void;
   onClose: () => void;
 }
 
-const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, volume, onSave, onClose }) => {
+const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, volume, theme, onSave, onClose }) => {
   const [tempIds, setTempIds] = useState([...videoIds]);
   const [tempVolume, setTempVolume] = useState(volume);
+  const [tempTheme, setTempTheme] = useState(theme);
   const [isSaving, setIsSaving] = useState(false);
   
   /**
@@ -90,7 +92,7 @@ const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, volume, onSave, 
       const newDate = new Date(isoWithOffset);
 
       if (!isNaN(newDate.getTime())) {
-        onSave(tempIds, newDate, tempVolume);
+        onSave(tempIds, newDate, tempVolume, tempTheme);
       } else {
         console.error("Mission Control: Invalid Launch Date generated", isoWithOffset);
         setIsSaving(false);
@@ -103,19 +105,57 @@ const SettingsPanel: React.FC<Props> = ({ videoIds, launchDate, volume, onSave, 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
-      <div className="glass w-full max-w-md border border-slate-700 rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-200 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
-        <div className="bg-slate-900 p-4 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-sm font-bold mono tracking-widest text-slate-100 uppercase">Mission Configuration</h2>
+      <div className={`glass w-full max-w-md border rounded-2xl overflow-hidden animate-in fade-in zoom-in duration-200 shadow-[0_0_100px_rgba(0,0,0,0.5)] ${
+        tempTheme === 'dark' ? 'border-slate-700' : 'border-slate-200'
+      }`}>
+        <div className={`${tempTheme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'} p-4 border-b flex items-center justify-between`}>
+          <h2 className={`text-sm font-bold mono tracking-widest uppercase ${tempTheme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>Mission Configuration</h2>
           <button 
             onClick={onClose} 
             disabled={isSaving}
-            className="text-slate-500 hover:text-white text-2xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className={`${tempTheme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'} text-2xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed`}
           >
             &times;
           </button>
         </div>
         
-        <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
+        <div className={`p-6 space-y-6 overflow-y-auto max-h-[70vh] ${tempTheme === 'dark' ? '' : 'bg-white'}`}>
+          {/* Theme Selection Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className={`text-[10px] uppercase tracking-[0.2em] font-bold ${tempTheme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>Visual Interface</h3>
+              <span className={`text-[9px] mono italic ${tempTheme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`}>Theme Mode</span>
+            </div>
+            <div className="flex p-1 bg-slate-950/20 rounded-lg border border-slate-800/50">
+              <button 
+                onClick={() => setTempTheme('dark')}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 rounded-md transition-all ${
+                  tempTheme === 'dark' 
+                    ? 'bg-blue-600 text-white shadow-lg' 
+                    : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <span className="text-[10px] font-black uppercase tracking-widest">Dark Mode</span>
+              </button>
+              <button 
+                onClick={() => setTempTheme('light')}
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 rounded-md transition-all ${
+                  tempTheme === 'light' 
+                    ? 'bg-blue-500 text-white shadow-lg' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707" />
+                </svg>
+                <span className="text-[10px] font-black uppercase tracking-widest">Light Mode</span>
+              </button>
+            </div>
+          </section>
+
           {/* Video Feeds Section */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
