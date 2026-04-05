@@ -4,6 +4,7 @@ import { MissionPhase, TelemetryData } from './types';
 import MissionHeader from './components/MissionHeader';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
 import OrionTelemetryCard from './components/OrionTelemetryCard';
+import OrionAttitudeCard from './components/OrionAttitudeCard';
 import ArowMonitor from './components/ArowMonitor';
 import MissionNotifications from './components/MissionNotifications';
 import SettingsPanel from './components/SettingsPanel';
@@ -19,6 +20,7 @@ const INITIAL_VIDEO_IDS = [
 ];
 const HISTORY_LIMIT = 40;
 const STORAGE_KEY = 'artemis_mission_config_v5';
+const SSE_URL = 'https://artemis.cdnspace.ca/api/telemetry/sse';
 
 // Tactical Sound Engine
 class MissionAudioEngine {
@@ -159,6 +161,7 @@ const App: React.FC = () => {
   
   const [currentMs, setCurrentMs] = useState<number>(Date.now());
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([]);
+  const [liveTelemetry, setLiveTelemetry] = useState<TelemetryData | null>(null);
   
   const elapsedSeconds = useMemo(() => {
     return (currentMs - launchDate.getTime()) / 1000;
@@ -241,13 +244,54 @@ const App: React.FC = () => {
 
   const telemetry = useMemo((): TelemetryData => {
     const t = elapsedSeconds;
-    if (t < 0) return { timestamp: Date.now(), altitude: 0, velocity: 0, fuel: 100, heartRate: 72 };
     let alt = 0, vel = 0;
-    if (t < 128) { vel = t * 150; alt = Math.pow(t, 2.1) / 50; }
+    if (t < 0) {
+      alt = 0;
+      vel = 0;
+    } else if (t < 128) { vel = t * 150; alt = Math.pow(t, 2.1) / 50; }
     else if (t < 486) { vel = 19200 + (t - 128) * 30; alt = 50 + (t - 128) * 0.5; }
     else { vel = 28000; alt = 200 + (t / 1000); }
-    return { timestamp: Date.now(), altitude: alt, velocity: vel, fuel: Math.max(0, 100 - (t / 100)), heartRate: 70 + Math.random() * 5 };
-  }, [elapsedSeconds]);
+    const pitch = 5 + Math.sin(t / 10) * 2;
+    const yaw = 2 + Math.cos(t / 15) * 1.5;
+    const roll = Math.sin(t / 20) * 5;
+    
+    // Simulate Earth and Moon distances
+    // Earth-Moon distance is ~384,400 km
+    // Mission progresses from Earth to Moon and back
+    let distEarth = 0;
+    let distMoon = 384400;
+    
+    if (t > 0) {
+      if (t < 486) {
+        distEarth = alt; 
+      } else {
+        const transitProgress = Math.min(1, (t - 486) / 259200);
+        distEarth = 200 + transitProgress * 384200;
+      }
+      distMoon = Math.max(0, 384400 - distEarth);
+    }
+
+    if (liveTelemetry) {
+      return {
+        ...liveTelemetry,
+        distanceFromEarth: Number(liveTelemetry.distanceFromEarth ?? distEarth),
+        distanceFromMoon: Number(liveTelemetry.distanceFromMoon ?? Math.max(0, distMoon))
+      };
+    }
+    
+    return { 
+      timestamp: Date.now(), 
+      altitude: alt, 
+      velocity: vel, 
+      fuel: Math.max(0, 100 - (t / 100)), 
+      heartRate: 70 + Math.random() * 5,
+      pitch,
+      yaw,
+      roll,
+      distanceFromEarth: Number(distEarth),
+      distanceFromMoon: Number(Math.max(0, distMoon))
+    };
+  }, [elapsedSeconds, liveTelemetry]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -276,6 +320,44 @@ const App: React.FC = () => {
     }, 50); 
     return () => clearInterval(timer);
   }, [launchDate, phase]);
+
+  useEffect(() => {
+    const connectSSE = () => {
+      const es = new EventSource(SSE_URL);
+      
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setLiveTelemetry({
+            timestamp: Date.now(),
+            altitude: data.altitude || 0,
+            velocity: data.velocity || 0,
+            fuel: data.fuel || 0,
+            heartRate: data.heartRate || 72,
+            pitch: data.pitch,
+            yaw: data.yaw,
+            roll: data.roll,
+            distanceFromEarth: data.distanceFromEarth,
+            distanceFromMoon: data.distanceFromMoon,
+            telemetryDate: data.telemetryDate,
+          });
+        } catch (err) {
+          console.error('Error parsing telemetry data:', err);
+        }
+      };
+
+      es.onerror = (err) => {
+        console.error('SSE Error:', err);
+        es.close();
+        setTimeout(connectSSE, 5000);
+      };
+
+      return es;
+    };
+
+    const es = connectSSE();
+    return () => es.close();
+  }, []);
 
   const telemetryRef = useRef(telemetry);
   useEffect(() => {
@@ -418,9 +500,10 @@ const App: React.FC = () => {
             
             {/* LEFT COLUMN: PRIMARY MONITORING (Visuals & Telemetry) */}
             <div className="col-span-12 lg:col-span-7 flex flex-col space-y-3 min-h-0">
-              {/* Top Row of Left Column: Orion Telemetry */}
-              <div className="flex-[1.2] min-h-[280px] lg:min-h-0">
-                <OrionTelemetryCard />
+              {/* Top Row of Left Column: Orion Telemetry & Attitude */}
+              <div className="flex-[1.2] min-h-[280px] lg:min-h-0 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <OrionTelemetryCard telemetryHistory={telemetryHistory} />
+                <OrionAttitudeCard telemetryHistory={telemetryHistory} />
               </div>
               
               {/* Bottom Row of Left Column: Trajectory Uplinks */}

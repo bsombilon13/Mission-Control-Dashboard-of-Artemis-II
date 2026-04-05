@@ -1,61 +1,16 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React from 'react';
 import TacticalCard from './TacticalCard';
 import { Activity, Gauge, Navigation, Zap, Target } from 'lucide-react';
 import { TelemetryData } from '../types';
 
-const SSE_URL = 'https://artemis.cdnspace.ca/api/telemetry/sse';
+interface Props {
+  telemetryHistory: TelemetryData[];
+}
 
-const OrionTelemetryCard: React.FC = () => {
-  const [telemetry, setTelemetry] = useState<TelemetryData | null>(null);
-  const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
-  const eventSourceRef = useRef<EventSource | null>(null);
-
-  useEffect(() => {
-    const connectSSE = () => {
-      setStatus('connecting');
-      const es = new EventSource(SSE_URL);
-      eventSourceRef.current = es;
-
-      es.onopen = () => {
-        setStatus('connected');
-      };
-
-      es.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          setTelemetry({
-            timestamp: Date.now(),
-            altitude: data.altitude || 0,
-            velocity: data.velocity || 0,
-            fuel: data.fuel || 0,
-            heartRate: data.heartRate || 72,
-            distanceFromEarth: data.distanceFromEarth,
-            distanceFromMoon: data.distanceFromMoon,
-            telemetryDate: data.telemetryDate,
-          });
-        } catch (err) {
-          console.error('Error parsing telemetry data:', err);
-        }
-      };
-
-      es.onerror = (err) => {
-        console.error('SSE Error:', err);
-        setStatus('error');
-        es.close();
-        // Retry after 5 seconds
-        setTimeout(connectSSE, 5000);
-      };
-    };
-
-    connectSSE();
-
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
+const OrionTelemetryCard: React.FC<Props> = ({ telemetryHistory }) => {
+  const telemetry = telemetryHistory.length > 0 ? telemetryHistory[telemetryHistory.length - 1] : null;
+  const status = telemetryHistory.length > 0 ? 'connected' : 'connecting';
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(num);
@@ -143,7 +98,9 @@ const OrionTelemetryCard: React.FC = () => {
             </div>
             <div className="flex items-baseline space-x-1">
               <span className="text-xl font-black mono text-blue-400">
-                {telemetry?.distanceFromEarth ? formatNumber(telemetry.distanceFromEarth) : '---'}
+                {typeof telemetry?.distanceFromEarth === 'number' && !isNaN(telemetry.distanceFromEarth) 
+                  ? formatNumber(telemetry.distanceFromEarth) 
+                  : '---'}
               </span>
               <span className="text-[10px] mono text-slate-500">KM</span>
             </div>
@@ -156,7 +113,9 @@ const OrionTelemetryCard: React.FC = () => {
             </div>
             <div className="flex items-baseline space-x-1">
               <span className="text-xl font-black mono text-amber-400">
-                {telemetry?.distanceFromMoon ? formatNumber(telemetry.distanceFromMoon) : '---'}
+                {typeof telemetry?.distanceFromMoon === 'number' && !isNaN(telemetry.distanceFromMoon) 
+                  ? formatNumber(telemetry.distanceFromMoon) 
+                  : '---'}
               </span>
               <span className="text-[10px] mono text-slate-500">KM</span>
             </div>

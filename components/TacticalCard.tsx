@@ -10,6 +10,7 @@ interface TacticalCardProps {
   footer?: React.ReactNode;
   className?: string;
   isCritical?: boolean;
+  allowOverflow?: boolean;
 }
 
 const TacticalCard: React.FC<TacticalCardProps> = ({ 
@@ -20,10 +21,13 @@ const TacticalCard: React.FC<TacticalCardProps> = ({
   headerAction, 
   footer, 
   className = '',
-  isCritical = false
+  isCritical = false,
+  allowOverflow = false
 }) => {
   return (
-    <div className={`glass rounded-xl border transition-all duration-500 flex flex-col h-full relative overflow-hidden group ${
+    <div className={`glass rounded-xl border transition-all duration-500 flex flex-col h-full relative group ${
+      allowOverflow ? 'overflow-visible' : 'overflow-hidden'
+    } ${
       isCritical 
         ? 'border-red-500/30 bg-red-950/10' 
         : 'border-white/10 dark:border-white/10 border-slate-200 hover:border-blue-500/30 dark:hover:border-blue-500/30'
@@ -70,7 +74,7 @@ const TacticalCard: React.FC<TacticalCardProps> = ({
       </div>
 
       {/* Card Content */}
-      <div className="flex-1 min-h-0 relative z-0">
+      <div className={`flex-1 min-h-0 relative z-0 ${allowOverflow ? 'overflow-visible' : ''}`}>
         {children}
       </div>
 

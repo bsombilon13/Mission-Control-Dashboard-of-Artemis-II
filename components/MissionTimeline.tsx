@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalCard from './TacticalCard';
 import { TimelineEvent } from '../types';
-import { Info, Clock, Activity, CheckCircle2, Circle } from 'lucide-react';
+import { Info, Clock, Activity, CheckCircle2, Circle, Tag, Box, Target, Layers } from 'lucide-react';
 
 interface Props {
   elapsedSeconds: number;
@@ -12,111 +12,111 @@ interface Props {
 
 export const MISSION_EVENTS: TimelineEvent[] = [
   // --- EXHAUSTIVE PRE-LAUNCH SEQUENCE (L-49H 15M to Liftoff) ---
-  { offsetSeconds: -177300, phase: 'pre-launch', label: "L-49H 15M: Call to Stations", description: "The launch team arrives on their stations and the countdown begins." },
-  { offsetSeconds: -175500, phase: 'pre-launch', label: "Propulsion Prep Start", description: "LOX/LH2 system preparations for vehicle loading begins (L-48H 45M)." },
-  { offsetSeconds: -175200, phase: 'pre-launch', label: "L-48H 40M: Clock Start", description: "The countdown clock begins its initial run." },
-  { offsetSeconds: -171000, phase: 'pre-launch', label: "Sound Suppression Prep", description: "Fill the water tank for the sound suppression system (L-47H 30M)." },
-  { offsetSeconds: -160200, phase: 'pre-launch', label: "Orion Spacecraft Power-up", description: "The Orion spacecraft is powered up if not already powered at call to stations (L-44H 30M).", associatedModule: "Orion Crew Module" },
-  { offsetSeconds: -144000, phase: 'pre-launch', label: "ICPS Power-up", description: "The interim cryogenic propulsion stage (ICPS) is powered up (L-40H).", associatedModule: "ICPS" },
-  { offsetSeconds: -142200, phase: 'pre-launch', label: "Core Stage Power-up", description: "The core stage is powered up (L-39H 30M).", associatedModule: "SLS Core Stage" },
-  { offsetSeconds: -139500, phase: 'pre-launch', label: "RS-25 Final Prep", description: "Final preparations of the four RS-25 engines (L-38H 45M).", associatedModule: "RS-25 Engines" },
-  { offsetSeconds: -121500, phase: 'pre-launch', label: "ICPS Power-down", description: "The ICPS is powered down for pre-launch system cycling (L-33H 45M)." },
-  { offsetSeconds: -117000, phase: 'pre-launch', label: "Orion Battery Charge", description: "Charge Orion flight batteries to 100% (L-32H 30M)." },
-  { offsetSeconds: -109800, phase: 'pre-launch', label: "Core Battery Charge", description: "Charge core stage flight batteries (L-30H 30M)." },
-  { offsetSeconds: -67500, phase: 'pre-launch', label: "ICPS Launch Power-up", description: "The ICPS is powered-up for launch sequence (L-18H 45M)." },
-  { offsetSeconds: -64800, phase: 'pre-launch', label: "Crew Suit Reg Leak Check", description: "Orion crew suit regulator leak checks begin (L-18H)." },
-  { offsetSeconds: -52200, phase: 'pre-launch', label: "L-15H: Pad Evacuation", description: "All non-essential personnel leave Launch Complex 39B (L-14H 30M)." },
-  { offsetSeconds: -47700, phase: 'pre-launch', label: "GN2 Cavity Inerting", description: "Air-to-gaseous nitrogen (GN2) changeover and vehicle cavity inerting (L-13H 15M)." },
-  { offsetSeconds: -45900, phase: 'pre-launch', label: "GLS Activation", description: "Ground Launch Sequencer (GLS) activation (L-12H 45M)." },
-  { offsetSeconds: -42000, phase: 'pre-launch', label: "L-11H 40M: Weather Brief", description: "Launch team conducts a weather and tanking briefing." },
-  { offsetSeconds: -41700, phase: 'pre-launch', label: "Hold (L-11H 35M)", description: "2-hour 15-minute built-in countdown hold begins." },
-  { offsetSeconds: -37200, phase: 'pre-launch', label: "L-10H 20M: Tanking Go Poll", description: "Launch team decides if they are “go” or “no-go” to begin tanking." },
-  { offsetSeconds: -37200, phase: 'pre-launch', label: "Orion Cold Soak", description: "Orion spacecraft cold soak sequence (L-10H 20M)." },
-  { offsetSeconds: -36600, phase: 'pre-launch', label: "Core LOX Chilldown", description: "Core stage LOX transfer line chilldown (L-10H 10M)." },
-  { offsetSeconds: -36600, phase: 'pre-launch', label: "Core LH2 Chilldown", description: "Core stage LH2 chilldown (L-10H 10M)." },
-  { offsetSeconds: -35400, phase: 'pre-launch', label: "Core LOX MPS Chilldown", description: "Core stage LOX main propulsion system chilldown (L-9H 50M)." },
-  { offsetSeconds: -33900, phase: 'pre-launch', label: "Core LH2 Slow Fill", description: "Core stage LH2 slow fill start (L-9H 25M)." },
-  { offsetSeconds: -33600, phase: 'pre-launch', label: "Resume T-Clock", description: "Resume T-Clock from T-8H 10M (L-9H 20M)." },
-  { offsetSeconds: -33000, phase: 'pre-launch', label: "Core LOX Slow Fill", description: "Core stage LOX slow fill start (L-9H 10M)." },
-  { offsetSeconds: -32400, phase: 'pre-launch', label: "Core LH2 Fast Fill", description: "Core stage LH2 fast fill (L-9H)." },
-  { offsetSeconds: -32100, phase: 'pre-launch', label: "Core LOX Fast Fill", description: "Core stage LOX fast fill (L-8H 55M)." },
-  { offsetSeconds: -31500, phase: 'pre-launch', label: "ICPS LH2 Chilldown", description: "ICPS LH2 chilldown (L-8H 45M)." },
-  { offsetSeconds: -31200, phase: 'pre-launch', label: "L-8H 40M: Crew Wake-up", description: "Flight crew wake up and launch countdown status check." },
-  { offsetSeconds: -29400, phase: 'pre-launch', label: "ICPS LH2 Fast Fill", description: "ICPS LH2 fast fill start (L-8H 10M)." },
-  { offsetSeconds: -27600, phase: 'pre-launch', label: "Core LH2 Topping", description: "Core stage LH2 topping (L-7H 40M)." },
-  { offsetSeconds: -27000, phase: 'pre-launch', label: "Core LH2 Replenish", description: "Core stage LH2 replenish mode (L-7H 30M – launch)." },
-  { offsetSeconds: -26700, phase: 'pre-launch', label: "ICPS LH2 Vent/Relief Test", description: "ICPS LH2 vent and relief test (L-7H 25M)." },
-  { offsetSeconds: -25500, phase: 'pre-launch', label: "ICPS LH2 Tank Topping", description: "ICPS LH2 tank topping start (L-7H 05M)." },
-  { offsetSeconds: -24600, phase: 'pre-launch', label: "ICPS LH2 Replenish", description: "ICPS LH2 replenish (L-6H 50M-launch)." },
-  { offsetSeconds: -22200, phase: 'pre-launch', label: "Orion Comms Activated", description: "Orion communications system activated (L-6H 10M)." },
-  { offsetSeconds: -22200, phase: 'pre-launch', label: "Core LOX Topping", description: "Core stage LOX topping (L-6H 10M)." },
-  { offsetSeconds: -22200, phase: 'pre-launch', label: "ICPS LOX MPS Chilldown", description: "ICPS LOX main propulsion system chilldown (L-6H 10M)." },
-  { offsetSeconds: -21600, phase: 'pre-launch', label: "L-6H: Crew Weather Brief", description: "Flight crew weather brief." },
-  { offsetSeconds: -21600, phase: 'pre-launch', label: "ICPS LOX Fast Fill", description: "ICPS LOX fast fill (L-6H)." },
-  { offsetSeconds: -20400, phase: 'pre-launch', label: "Core LOX Replenish", description: "Core stage LOX replenish (L-5H 40M – launch)." },
-  { offsetSeconds: -20400, phase: 'pre-launch', label: "Pad Rescue Ready", description: "Stage pad rescue team and closeout crew assembly (L-5H 40M)." },
-  { offsetSeconds: -20400, phase: 'pre-launch', label: "Suit Donning", description: "Flight crew begins donning launch and entry spacesuits (L-5H 40M)." },
-  { offsetSeconds: -18900, phase: 'pre-launch', label: "ICPS LOX Relief Test", description: "ICPS LOX vent and relief test (L-5H 15M)." },
-  { offsetSeconds: -18000, phase: 'pre-launch', label: "ICPS LOX Topping", description: "ICPS LOX topping (L-5H)." },
-  { offsetSeconds: -16800, phase: 'pre-launch', label: "Hold (L-4H 40M)", description: "Start 40-minute built-in hold; Closeout crew to white room." },
-  { offsetSeconds: -16800, phase: 'pre-launch', label: "Crew Departure (O&C)", description: "Flight crew departs O&C suit room for launch complex (L-4H 40M)." },
-  { offsetSeconds: -16200, phase: 'pre-launch', label: "Arrival at Pad 39B", description: "Flight crew departs to Launch Complex 39B (L-4H 30M)." },
-  { offsetSeconds: -15900, phase: 'pre-launch', label: "Orion Ingress Prep", description: "Orion preps for flight crew ingress (L-4H 25M)." },
-  { offsetSeconds: -15200, phase: 'pre-launch', label: "White Room Access", description: "Flight crew heads to white room (L-4H 20M)." },
-  { offsetSeconds: -15000, phase: 'pre-launch', label: "Helmets/Gloves Donning", description: "Flight crew puts on helmets and gloves (L-4H 10M)." },
-  { offsetSeconds: -14400, phase: 'pre-launch', label: "L-4H: Crew Ingress", description: "Flight crew ingress, communication checks and suit leak checks." },
-  { offsetSeconds: -12300, phase: 'pre-launch', label: "White Room Closeout", description: "White room closeout complete (L-3H 25M)." },
-  { offsetSeconds: -12000, phase: 'pre-launch', label: "Hatch Closure", description: "Crew module hatch preps and closure (L-3H 20M)." },
-  { offsetSeconds: -11700, phase: 'pre-launch', label: "Hatch Seal Checks", description: "Counterbalance mechanism hatch seal press decay checks (L-3H 15M)." },
-  { offsetSeconds: -8400, phase: 'pre-launch', label: "Service Panel Closeout", description: "Crew module hatch service panel install/closeouts (L-2H 20M)." },
-  { offsetSeconds: -6000, phase: 'pre-launch', label: "LAS Hatch Closure", description: "Launch abort system (LAS) hatch closure for flight (L-1H 40M)." },
-  { offsetSeconds: -4200, phase: 'pre-launch', label: "LD Briefing (L-70M)", description: "Launch Director brief – Flight vehicle/TPS Scan results." },
-  { offsetSeconds: -2700, phase: 'pre-launch', label: "Pad Clear", description: "Closeout crew departs Launch Complex 39B (L-45M)." },
-  { offsetSeconds: -2400, phase: 'pre-launch', label: "L-40M: Final Built-in Hold", description: "Built in 30-minute countdown hold begins." },
-  { offsetSeconds: -1800, phase: 'pre-launch', label: "NTD Briefing (L-30M)", description: "Final NASA Test Director (NTD) briefing is held." },
-  { offsetSeconds: -1500, phase: 'pre-launch', label: "L-25M: Hold Transition", description: "Transition team to Orion Earth comm loop." },
-  { offsetSeconds: -960, phase: 'pre-launch', label: "L-16M: Final Launch Poll", description: "Launch director polls team to ensure they are “go” for launch." },
-  { offsetSeconds: -900, phase: 'pre-launch', label: "Visors Down (L-15M)", description: "Flight crew visors down." },
-  { offsetSeconds: -840, phase: 'pre-launch', label: "Short Purge Check", description: "Flight crew short purge verification (L-14M)." },
-  { offsetSeconds: -600, phase: 'pre-launch', label: "T-10M: Terminal Count", description: "Ground Launch Sequencer initiates terminal count." },
-  { offsetSeconds: -480, phase: 'pre-launch', label: "Access Arm Retract (T-8M)", description: "Crew Access Arm retract." },
-  { offsetSeconds: -360, phase: 'pre-launch', label: "T-6M: Tank Pressurization", description: "GLS go for core stage tank pressurization." },
-  { offsetSeconds: -360, phase: 'pre-launch', label: "Orion Internal Power", description: "Orion set to internal power (T-6M)." },
-  { offsetSeconds: -360, phase: 'pre-launch', label: "Ascent Pyros Armed", description: "Orion ascent pyros are armed (T-6M)." },
-  { offsetSeconds: -357, phase: 'pre-launch', label: "Core LH2 Terminate", description: "Core stage LH2 terminate replenish (T-5M 57S)." },
-  { offsetSeconds: -320, phase: 'pre-launch', label: "LAS Capability Active", description: "Launch Abort System capability is available (T-5M 20S)." },
-  { offsetSeconds: -280, phase: 'pre-launch', label: "High Flow Bleed", description: "GLS is go for LH2 high flow bleed check (T-4M 40S)." },
-  { offsetSeconds: -270, phase: 'pre-launch', label: "FTS Arming", description: "GLS is go for flight termination system arm (T-4M 30S)." },
-  { offsetSeconds: -240, phase: 'pre-launch', label: "Core APU Start (T-4M)", description: "Core stage auxiliary power unit (APU) start." },
-  { offsetSeconds: -240, phase: 'pre-launch', label: "Core LOX Terminate", description: "Core stage LOX terminate replenish (T-4M)." },
-  { offsetSeconds: -210, phase: 'pre-launch', label: "ICPS LOX Terminate", description: "ICPS LOX terminate replenish (T-3M 30S)." },
-  { offsetSeconds: -190, phase: 'pre-launch', label: "Purge Sequence 4", description: "GLS is go for purge sequence 4 (T-3M 10S)." },
-  { offsetSeconds: -122, phase: 'pre-launch', label: "ICPS Internal Power", description: "ICPS switches to internal battery power (T-2M 02S)." },
-  { offsetSeconds: -120, phase: 'pre-launch', label: "Booster Internal Power", description: "Booster switches to internal battery power (T-2M)." },
-  { offsetSeconds: -90, phase: 'pre-launch', label: "Core Internal Power", description: "Core stage switches to internal power (T-1M 30S)." },
-  { offsetSeconds: -80, phase: 'pre-launch', label: "ICPS Terminal Mode", description: "ICPS enters terminal countdown mode (T-1M 20S)." },
-  { offsetSeconds: -50, phase: 'pre-launch', label: "ICPS LH2 Terminate", description: "ICPS LH2 terminate replenish (T-50S)." },
-  { offsetSeconds: -33, phase: 'pre-launch', label: "ALS Go Command", description: "GLS sends “go for automated launch sequencer” command (T-33S)." },
-  { offsetSeconds: -30, phase: 'pre-launch', label: "Flight Computer ALS", description: "Core stage flight computer to automated launching sequencer (T-30S)." },
-  { offsetSeconds: -12, phase: 'pre-launch', label: "Hydrogen Burn Off", description: "Hydrogen burn off igniters initiated (T-12S)." },
-  { offsetSeconds: -10, phase: 'ascent', label: "Engine Start Command", description: "GLS sends the command for core stage engine start (T-10S)." },
-  { offsetSeconds: -6.36, phase: 'ascent', label: "RS-25 Startup", description: "RS-25 engines startup sequence begins." },
+  { offsetSeconds: -177300, phase: 'pre-launch', category: 'countdown', label: "L-49H 15M: Call to Stations", description: "The launch team arrives on their stations and the countdown begins." },
+  { offsetSeconds: -175500, phase: 'pre-launch', category: 'countdown', label: "Propulsion Prep Start", description: "LOX/LH2 system preparations for vehicle loading begins (L-48H 45M)." },
+  { offsetSeconds: -175200, phase: 'pre-launch', category: 'countdown', label: "L-48H 40M: Clock Start", description: "The countdown clock begins its initial run." },
+  { offsetSeconds: -171000, phase: 'pre-launch', category: 'countdown', label: "Sound Suppression Prep", description: "Fill the water tank for the sound suppression system (L-47H 30M)." },
+  { offsetSeconds: -160200, phase: 'pre-launch', category: 'countdown', label: "Orion Spacecraft Power-up", description: "The Orion spacecraft is powered up if not already powered at call to stations (L-44H 30M).", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: -144000, phase: 'pre-launch', category: 'countdown', label: "ICPS Power-up", description: "The interim cryogenic propulsion stage (ICPS) is powered up (L-40H).", associatedModule: "ICPS" },
+  { offsetSeconds: -142200, phase: 'pre-launch', category: 'countdown', label: "Core Stage Power-up", description: "The core stage is powered up (L-39H 30M).", associatedModule: "SLS Core Stage" },
+  { offsetSeconds: -139500, phase: 'pre-launch', category: 'countdown', label: "RS-25 Final Prep", description: "Final preparations of the four RS-25 engines (L-38H 45M).", associatedModule: "RS-25 Engines" },
+  { offsetSeconds: -121500, phase: 'pre-launch', category: 'countdown', label: "ICPS Power-down", description: "The ICPS is powered down for pre-launch system cycling (L-33H 45M).", associatedModule: "ICPS" },
+  { offsetSeconds: -117000, phase: 'pre-launch', category: 'countdown', label: "Orion Battery Charge", description: "Charge Orion flight batteries to 100% (L-32H 30M).", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: -109800, phase: 'pre-launch', category: 'countdown', label: "Core Battery Charge", description: "Charge core stage flight batteries (L-30H 30M).", associatedModule: "SLS Core Stage" },
+  { offsetSeconds: -67500, phase: 'pre-launch', category: 'countdown', label: "ICPS Launch Power-up", description: "The ICPS is powered-up for launch sequence (L-18H 45M).", associatedModule: "ICPS" },
+  { offsetSeconds: -64800, phase: 'pre-launch', category: 'countdown', label: "Crew Suit Reg Leak Check", description: "Orion crew suit regulator leak checks begin (L-18H).", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: -52200, phase: 'pre-launch', category: 'countdown', label: "L-15H: Pad Evacuation", description: "All non-essential personnel leave Launch Complex 39B (L-14H 30M)." },
+  { offsetSeconds: -47700, phase: 'pre-launch', category: 'countdown', label: "GN2 Cavity Inerting", description: "Air-to-gaseous nitrogen (GN2) changeover and vehicle cavity inerting (L-13H 15M)." },
+  { offsetSeconds: -45900, phase: 'pre-launch', category: 'countdown', label: "GLS Activation", description: "Ground Launch Sequencer (GLS) activation (L-12H 45M)." },
+  { offsetSeconds: -42000, phase: 'pre-launch', category: 'countdown', label: "L-11H 40M: Weather Brief", description: "Launch team conducts a weather and tanking briefing." },
+  { offsetSeconds: -41700, phase: 'pre-launch', category: 'countdown', label: "Hold (L-11H 35M)", description: "2-hour 15-minute built-in countdown hold begins." },
+  { offsetSeconds: -37200, phase: 'pre-launch', category: 'countdown', label: "L-10H 20M: Tanking Go Poll", description: "Launch team decides if they are “go” or “no-go” to begin tanking." },
+  { offsetSeconds: -37200, phase: 'pre-launch', category: 'countdown', label: "Orion Cold Soak", description: "Orion spacecraft cold soak sequence (L-10H 20M)." },
+  { offsetSeconds: -36600, phase: 'pre-launch', category: 'countdown', label: "Core LOX Chilldown", description: "Core stage LOX transfer line chilldown (L-10H 10M)." },
+  { offsetSeconds: -36600, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Chilldown", description: "Core stage LH2 chilldown (L-10H 10M)." },
+  { offsetSeconds: -35400, phase: 'pre-launch', category: 'countdown', label: "Core LOX MPS Chilldown", description: "Core stage LOX main propulsion system chilldown (L-9H 50M)." },
+  { offsetSeconds: -33900, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Slow Fill", description: "Core stage LH2 slow fill start (L-9H 25M)." },
+  { offsetSeconds: -33600, phase: 'pre-launch', category: 'countdown', label: "Resume T-Clock", description: "Resume T-Clock from T-8H 10M (L-9H 20M)." },
+  { offsetSeconds: -33000, phase: 'pre-launch', category: 'countdown', label: "Core LOX Slow Fill", description: "Core stage LOX slow fill start (L-9H 10M)." },
+  { offsetSeconds: -32400, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Fast Fill", description: "Core stage LH2 fast fill (L-9H)." },
+  { offsetSeconds: -32100, phase: 'pre-launch', category: 'countdown', label: "Core LOX Fast Fill", description: "Core stage LOX fast fill (L-8H 55M)." },
+  { offsetSeconds: -31500, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Chilldown", description: "ICPS LH2 chilldown (L-8H 45M)." },
+  { offsetSeconds: -31200, phase: 'pre-launch', category: 'countdown', label: "L-8H 40M: Crew Wake-up", description: "Flight crew wake up and launch countdown status check." },
+  { offsetSeconds: -29400, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Fast Fill", description: "ICPS LH2 fast fill start (L-8H 10M)." },
+  { offsetSeconds: -27600, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Topping", description: "Core stage LH2 topping (L-7H 40M)." },
+  { offsetSeconds: -27000, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Replenish", description: "Core stage LH2 replenish mode (L-7H 30M – launch)." },
+  { offsetSeconds: -26700, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Vent/Relief Test", description: "ICPS LH2 vent and relief test (L-7H 25M)." },
+  { offsetSeconds: -25500, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Tank Topping", description: "ICPS LH2 tank topping start (L-7H 05M)." },
+  { offsetSeconds: -24600, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Replenish", description: "ICPS LH2 replenish (L-6H 50M-launch)." },
+  { offsetSeconds: -22200, phase: 'pre-launch', category: 'countdown', label: "Orion Comms Activated", description: "Orion communications system activated (L-6H 10M)." },
+  { offsetSeconds: -22200, phase: 'pre-launch', category: 'countdown', label: "Core LOX Topping", description: "Core stage LOX topping (L-6H 10M)." },
+  { offsetSeconds: -22200, phase: 'pre-launch', category: 'countdown', label: "ICPS LOX MPS Chilldown", description: "ICPS LOX main propulsion system chilldown (L-6H 10M)." },
+  { offsetSeconds: -21600, phase: 'pre-launch', category: 'countdown', label: "L-6H: Crew Weather Brief", description: "Flight crew weather brief." },
+  { offsetSeconds: -21600, phase: 'pre-launch', category: 'countdown', label: "ICPS LOX Fast Fill", description: "ICPS LOX fast fill (L-6H)." },
+  { offsetSeconds: -20400, phase: 'pre-launch', category: 'countdown', label: "Core LOX Replenish", description: "Core stage LOX replenish (L-5H 40M – launch)." },
+  { offsetSeconds: -20400, phase: 'pre-launch', category: 'countdown', label: "Pad Rescue Ready", description: "Stage pad rescue team and closeout crew assembly (L-5H 40M)." },
+  { offsetSeconds: -20400, phase: 'pre-launch', category: 'countdown', label: "Suit Donning", description: "Flight crew begins donning launch and entry spacesuits (L-5H 40M)." },
+  { offsetSeconds: -18900, phase: 'pre-launch', category: 'countdown', label: "ICPS LOX Relief Test", description: "ICPS LOX vent and relief test (L-5H 15M)." },
+  { offsetSeconds: -18000, phase: 'pre-launch', category: 'countdown', label: "ICPS LOX Topping", description: "ICPS LOX topping (L-5H)." },
+  { offsetSeconds: -16800, phase: 'pre-launch', category: 'countdown', label: "Hold (L-4H 40M)", description: "Start 40-minute built-in hold; Closeout crew to white room." },
+  { offsetSeconds: -16800, phase: 'pre-launch', category: 'countdown', label: "Crew Departure (O&C)", description: "Flight crew departs O&C suit room for launch complex (L-4H 40M)." },
+  { offsetSeconds: -16200, phase: 'pre-launch', category: 'countdown', label: "Arrival at Pad 39B", description: "Flight crew departs to Launch Complex 39B (L-4H 30M)." },
+  { offsetSeconds: -15900, phase: 'pre-launch', category: 'countdown', label: "Orion Ingress Prep", description: "Orion preps for flight crew ingress (L-4H 25M)." },
+  { offsetSeconds: -15200, phase: 'pre-launch', category: 'countdown', label: "White Room Access", description: "Flight crew heads to white room (L-4H 20M)." },
+  { offsetSeconds: -15000, phase: 'pre-launch', category: 'countdown', label: "Helmets/Gloves Donning", description: "Flight crew puts on helmets and gloves (L-4H 10M)." },
+  { offsetSeconds: -14400, phase: 'pre-launch', category: 'countdown', label: "L-4H: Crew Ingress", description: "Flight crew ingress, communication checks and suit leak checks." },
+  { offsetSeconds: -12300, phase: 'pre-launch', category: 'countdown', label: "White Room Closeout", description: "White room closeout complete (L-3H 25M)." },
+  { offsetSeconds: -12000, phase: 'pre-launch', category: 'countdown', label: "Hatch Closure", description: "Crew module hatch preps and closure (L-3H 20M)." },
+  { offsetSeconds: -11700, phase: 'pre-launch', category: 'countdown', label: "Hatch Seal Checks", description: "Counterbalance mechanism hatch seal press decay checks (L-3H 15M)." },
+  { offsetSeconds: -8400, phase: 'pre-launch', category: 'countdown', label: "Service Panel Closeout", description: "Crew module hatch service panel install/closeouts (L-2H 20M)." },
+  { offsetSeconds: -6000, phase: 'pre-launch', category: 'countdown', label: "LAS Hatch Closure", description: "Launch abort system (LAS) hatch closure for flight (L-1H 40M)." },
+  { offsetSeconds: -4200, phase: 'pre-launch', category: 'countdown', label: "LD Briefing (L-70M)", description: "Launch Director brief – Flight vehicle/TPS Scan results." },
+  { offsetSeconds: -2700, phase: 'pre-launch', category: 'countdown', label: "Pad Clear", description: "Closeout crew departs Launch Complex 39B (L-45M)." },
+  { offsetSeconds: -2400, phase: 'pre-launch', category: 'countdown', label: "L-40M: Final Built-in Hold", description: "Built in 30-minute countdown hold begins." },
+  { offsetSeconds: -1800, phase: 'pre-launch', category: 'countdown', label: "NTD Briefing (L-30M)", description: "Final NASA Test Director (NTD) briefing is held." },
+  { offsetSeconds: -1500, phase: 'pre-launch', category: 'countdown', label: "L-25M: Hold Transition", description: "Transition team to Orion Earth comm loop." },
+  { offsetSeconds: -960, phase: 'pre-launch', category: 'countdown', label: "L-16M: Final Launch Poll", description: "Launch director polls team to ensure they are “go” for launch." },
+  { offsetSeconds: -900, phase: 'pre-launch', category: 'countdown', label: "Visors Down (L-15M)", description: "Flight crew visors down." },
+  { offsetSeconds: -840, phase: 'pre-launch', category: 'countdown', label: "Short Purge Check", description: "Flight crew short purge verification (L-14M)." },
+  { offsetSeconds: -600, phase: 'pre-launch', category: 'countdown', label: "T-10M: Terminal Count", description: "Ground Launch Sequencer initiates terminal count." },
+  { offsetSeconds: -480, phase: 'pre-launch', category: 'countdown', label: "Access Arm Retract (T-8M)", description: "Crew Access Arm retract." },
+  { offsetSeconds: -360, phase: 'pre-launch', category: 'countdown', label: "T-6M: Tank Pressurization", description: "GLS go for core stage tank pressurization." },
+  { offsetSeconds: -360, phase: 'pre-launch', category: 'countdown', label: "Orion Internal Power", description: "Orion set to internal power (T-6M)." },
+  { offsetSeconds: -360, phase: 'pre-launch', category: 'countdown', label: "Ascent Pyros Armed", description: "Orion ascent pyros are armed (T-6M)." },
+  { offsetSeconds: -357, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Terminate", description: "Core stage LH2 terminate replenish (T-5M 57S)." },
+  { offsetSeconds: -320, phase: 'pre-launch', category: 'countdown', label: "LAS Capability Active", description: "Launch Abort System capability is available (T-5M 20S)." },
+  { offsetSeconds: -280, phase: 'pre-launch', category: 'countdown', label: "High Flow Bleed", description: "GLS is go for LH2 high flow bleed check (T-4M 40S)." },
+  { offsetSeconds: -270, phase: 'pre-launch', category: 'countdown', label: "FTS Arming", description: "GLS is go for flight termination system arm (T-4M 30S)." },
+  { offsetSeconds: -240, phase: 'pre-launch', category: 'countdown', label: "Core APU Start (T-4M)", description: "Core stage auxiliary power unit (APU) start." },
+  { offsetSeconds: -240, phase: 'pre-launch', category: 'countdown', label: "Core LOX Terminate", description: "Core stage LOX terminate replenish (T-4M)." },
+  { offsetSeconds: -210, phase: 'pre-launch', category: 'countdown', label: "ICPS LOX Terminate", description: "ICPS LOX terminate replenish (T-3M 30S)." },
+  { offsetSeconds: -190, phase: 'pre-launch', category: 'countdown', label: "Purge Sequence 4", description: "GLS is go for purge sequence 4 (T-3M 10S)." },
+  { offsetSeconds: -122, phase: 'pre-launch', category: 'countdown', label: "ICPS Internal Power", description: "ICPS switches to internal battery power (T-2M 02S)." },
+  { offsetSeconds: -120, phase: 'pre-launch', category: 'countdown', label: "Booster Internal Power", description: "Booster switches to internal battery power (T-2M)." },
+  { offsetSeconds: -90, phase: 'pre-launch', category: 'countdown', label: "Core Internal Power", description: "Core stage switches to internal power (T-1M 30S)." },
+  { offsetSeconds: -80, phase: 'pre-launch', category: 'countdown', label: "ICPS Terminal Mode", description: "ICPS enters terminal countdown mode (T-1M 20S)." },
+  { offsetSeconds: -50, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Terminate", description: "ICPS LH2 terminate replenish (T-50S)." },
+  { offsetSeconds: -33, phase: 'pre-launch', category: 'countdown', label: "ALS Go Command", description: "GLS sends “go for automated launch sequencer” command (T-33S)." },
+  { offsetSeconds: -30, phase: 'pre-launch', category: 'countdown', label: "Flight Computer ALS", description: "Core stage flight computer to automated launching sequencer (T-30S)." },
+  { offsetSeconds: -12, phase: 'pre-launch', category: 'countdown', label: "Hydrogen Burn Off", description: "Hydrogen burn off igniters initiated (T-12S)." },
+  { offsetSeconds: -10, phase: 'ascent', category: 'ascent', label: "Engine Start Command", description: "GLS sends the command for core stage engine start (T-10S)." },
+  { offsetSeconds: -6.36, phase: 'ascent', category: 'ascent', label: "RS-25 Startup", description: "RS-25 engines startup sequence begins." },
   
   // --- MISSION ASCENT ---
-  { offsetSeconds: 0, phase: 'ascent', label: "T-0: LIFTOFF", description: "Booster ignition, umbilical separation, and liftoff.", associatedModule: "SLS Block 1" },
-  { offsetSeconds: 9, phase: 'ascent', label: "Tower Clear", description: "SLS clears the launch tower.", estimatedDuration: "9s" },
-  { offsetSeconds: 70, phase: 'ascent', label: "Max Q", description: "Maximum dynamic pressure on vehicle structure.", estimatedDuration: "12s" },
-  { offsetSeconds: 128, phase: 'ascent', label: "SRB Separation", description: "Solid Rocket Booster burnout and separation.", associatedModule: "SRBs" },
-  { offsetSeconds: 198, phase: 'ascent', label: "LAS Jettison", description: "Launch abort system jettison – safe to orbit.", associatedModule: "LAS" },
-  { offsetSeconds: 486, phase: 'ascent', label: "MECO", description: "SLS core stage main engine cutoff.", estimatedDuration: "8m 6s" },
-  { offsetSeconds: 498, phase: 'ascent', label: "Core Stage Separation", description: "Core stage separates from ICPS." },
+  { offsetSeconds: 0, phase: 'ascent', category: 'ascent', label: "T-0: LIFTOFF", description: "Booster ignition, umbilical separation, and liftoff.", associatedModule: "SLS Block 1" },
+  { offsetSeconds: 9, phase: 'ascent', category: 'ascent', label: "Tower Clear", description: "SLS clears the launch tower.", estimatedDuration: "9s" },
+  { offsetSeconds: 70, phase: 'ascent', category: 'ascent', label: "Max Q", description: "Maximum dynamic pressure on vehicle structure.", estimatedDuration: "12s" },
+  { offsetSeconds: 128, phase: 'ascent', category: 'ascent', label: "SRB Separation", description: "Solid Rocket Booster burnout and separation.", associatedModule: "SRBs" },
+  { offsetSeconds: 198, phase: 'ascent', category: 'ascent', label: "LAS Jettison", description: "Launch abort system jettison – safe to orbit.", associatedModule: "LAS" },
+  { offsetSeconds: 486, phase: 'ascent', category: 'ascent', label: "MECO", description: "SLS core stage main engine cutoff.", estimatedDuration: "8m 6s" },
+  { offsetSeconds: 498, phase: 'ascent', category: 'ascent', label: "Core Stage Separation", description: "Core stage separates from ICPS.", associatedModule: "SLS Core Stage" },
   
   // --- MISSION PHASES (Summarized) ---
-  { offsetSeconds: 6477, phase: 'orbit', label: "Apogee Raise Burn", description: "Insertion into high Earth orbit.", estimatedDuration: "20s", associatedModule: "ICPS" },
-  { offsetSeconds: 92220, phase: 'transit', label: "TLI Burn", description: "Translunar Injection - departing for the Moon.", estimatedDuration: "18m", associatedModule: "ICPS" },
-  { offsetSeconds: 436980, phase: 'lunar', label: "Lunar Flyby", description: "Closest approach to the Lunar surface.", associatedModule: "Orion & ESM" },
-  { offsetSeconds: 783180, phase: 'recovery', label: "Entry Interface", description: "Orion hits atmosphere.", associatedModule: "Orion Crew Module" },
-  { offsetSeconds: 783960, phase: 'splashdown', label: "SPLASHDOWN", description: "Artemis II splashdown in the Pacific Ocean.", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: 6477, phase: 'orbit', category: 'transit', label: "Apogee Raise Burn", description: "Insertion into high Earth orbit.", estimatedDuration: "20s", associatedModule: "ICPS" },
+  { offsetSeconds: 92220, phase: 'transit', category: 'transit', label: "TLI Burn", description: "Translunar Injection - departing for the Moon.", estimatedDuration: "18m", associatedModule: "ICPS" },
+  { offsetSeconds: 436980, phase: 'lunar', category: 'lunar', label: "Lunar Flyby", description: "Closest approach to the Lunar surface.", associatedModule: "Orion & ESM" },
+  { offsetSeconds: 783180, phase: 'recovery', category: 'recovery', label: "Entry Interface", description: "Orion hits atmosphere.", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: 783960, phase: 'splashdown', category: 'recovery', label: "SPLASHDOWN", description: "Artemis II splashdown in the Pacific Ocean.", associatedModule: "Orion Crew Module" },
 ];
 
 const formatTimeShort = (seconds: number) => {
@@ -135,7 +135,9 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
   const [hoveredEvent, setHoveredEvent] = useState<TimelineEvent | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoverPos, setHoverPos] = useState<{ top: number, left: number } | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeIndex = useMemo(() => {
     let bestIdx = -1;
@@ -149,6 +151,16 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
     return bestIdx;
   }, [elapsedSeconds]);
 
+  const scrollToEvent = (index: number) => {
+    const element = scrollRef.current?.querySelector(`[data-event-index="${index}"]`);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (activeItemRef.current) {
@@ -160,6 +172,35 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
     }, 100);
     return () => clearTimeout(timer);
   }, [activeIndex]);
+
+  const [tooltipSide, setTooltipSide] = useState<'left' | 'right'>('left');
+
+  const handleMouseEnter = (event: TimelineEvent, index: number, e: React.MouseEvent) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const parentRect = scrollRef.current?.getBoundingClientRect();
+    if (parentRect) {
+      // Determine which side to show the tooltip based on card position in viewport
+      const side = parentRect.left < 320 ? 'right' : 'left';
+      setTooltipSide(side);
+      
+      setHoveredEvent(event);
+      setHoveredIndex(index);
+      setHoverPos({ 
+        top: rect.top - parentRect.top + (rect.height / 2),
+        left: side === 'left' ? (isCompressed ? -10 : -20) : (isCompressed ? 40 : 60)
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredEvent(null);
+      setHoveredIndex(null);
+      setHoverPos(null);
+    }, 150);
+  };
 
   const getPhaseStyles = (phase?: string) => {
     switch(phase) {
@@ -179,6 +220,7 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
       title="Sequence Monitor"
       subtitle="High-Fidelity Flight Profile"
       icon={<Activity className="w-3.5 h-3.5" />}
+      allowOverflow={true}
       footer={
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-2">
@@ -207,22 +249,10 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
               return (
                 <div 
                   key={idx}
+                  data-event-index={idx}
                   ref={isActive ? activeItemRef : null}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const parentRect = scrollRef.current?.getBoundingClientRect();
-                    if (parentRect) {
-                      setHoveredEvent(event);
-                      setHoverPos({ 
-                        top: rect.top - parentRect.top + (rect.height / 2),
-                        left: isCompressed ? -10 : -20 
-                      });
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredEvent(null);
-                    setHoverPos(null);
-                  }}
+                  onMouseEnter={(e) => handleMouseEnter(event, idx, e)}
+                  onMouseLeave={handleMouseLeave}
                   className={`relative flex items-center transition-all duration-300 cursor-help ${
                     isActive 
                       ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-5 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' 
@@ -315,12 +345,17 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
             style={{ 
               position: 'absolute',
               top: hoverPos.top,
-              right: '100%',
-              marginRight: '12px',
+              ...(tooltipSide === 'left' 
+                ? { right: '100%', marginRight: '12px' } 
+                : { left: '100%', marginLeft: '12px' }),
               transform: 'translateY(-50%)',
               zIndex: 1000,
-              pointerEvents: 'none'
+              pointerEvents: 'auto'
             }}
+            onMouseEnter={() => {
+              if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+            }}
+            onMouseLeave={handleMouseLeave}
           >
             <div className={`border rounded-xl p-4 backdrop-blur-3xl shadow-[0_0_40px_rgba(0,0,0,0.8)] min-w-[240px] max-w-[300px] relative overflow-hidden transition-colors duration-500 ${
               document.documentElement.classList.contains('light') ? 'bg-white/95 border-slate-200' : 'bg-slate-950/95 border-blue-500/40'
@@ -365,30 +400,47 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                 </p>
 
                 {/* Detailed Metrics */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/5">
-                  {hoveredEvent.estimatedDuration && (
-                    <div className="flex flex-col">
-                      <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Est. Duration</span>
-                      <span className="text-[9px] mono text-blue-400 font-bold">{hoveredEvent.estimatedDuration}</span>
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10">
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center space-x-1 text-slate-500">
+                      <Layers size={8} />
+                      <span className="text-[7px] font-bold uppercase tracking-widest">Category</span>
                     </div>
-                  )}
-                  {hoveredEvent.associatedModule && (
-                    <div className="flex flex-col">
-                      <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Assoc. Module</span>
-                      <span className="text-[9px] mono text-blue-400 font-bold">{hoveredEvent.associatedModule}</span>
-                    </div>
-                  )}
-                  <div className="flex flex-col">
-                    <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Precise Offset</span>
-                    <span className="text-[9px] mono text-blue-400 font-bold">{hoveredEvent.offsetSeconds.toFixed(2)}s</span>
+                    <span className="text-[9px] mono text-blue-400 font-bold uppercase truncate">
+                      {hoveredEvent.category || 'General'}
+                    </span>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-1">Status</span>
+
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center space-x-1 text-slate-500">
+                      <Target size={8} />
+                      <span className="text-[7px] font-bold uppercase tracking-widest">Module</span>
+                    </div>
+                    <span className="text-[9px] mono text-blue-400 font-bold truncate">
+                      {hoveredEvent.associatedModule || 'Integrated Stack'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center space-x-1 text-slate-500">
+                      <Clock size={8} />
+                      <span className="text-[7px] font-bold uppercase tracking-widest">Offset</span>
+                    </div>
+                    <span className="text-[9px] mono text-blue-400 font-bold">
+                      {hoveredEvent.offsetSeconds.toFixed(1)}s
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center space-x-1 text-slate-500">
+                      <Activity size={8} />
+                      <span className="text-[7px] font-bold uppercase tracking-widest">Status</span>
+                    </div>
                     <div className="flex items-center space-x-1">
                       {elapsedSeconds >= hoveredEvent.offsetSeconds ? (
-                        <CheckCircle2 size={10} className="text-emerald-500" />
+                        <CheckCircle2 size={9} className="text-emerald-500" />
                       ) : (
-                        <Activity size={10} className="text-blue-500 animate-pulse" />
+                        <Circle size={9} className="text-blue-500 animate-pulse" />
                       )}
                       <span className={`text-[8px] font-black uppercase ${elapsedSeconds >= hoveredEvent.offsetSeconds ? 'text-emerald-500' : 'text-blue-500'}`}>
                         {elapsedSeconds >= hoveredEvent.offsetSeconds ? 'Executed' : 'Pending'}
@@ -396,6 +448,14 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Go to Event Button */}
+                <button
+                  onClick={() => hoveredIndex !== null && scrollToEvent(hoveredIndex)}
+                  className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] active:scale-95 pointer-events-auto"
+                >
+                  Go to Event
+                </button>
               </div>
 
               {/* Decorative Corner */}
@@ -403,7 +463,7 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
             </div>
             
             {/* Pointer Arrow */}
-            <div className={`absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 border-r border-t rotate-45 z-[-1] transition-colors duration-500 ${
+            <div className={`absolute ${tooltipSide === 'left' ? 'right-[-6px]' : 'left-[-6px]'} top-1/2 -translate-y-1/2 w-3 h-3 border-r border-t rotate-45 z-[-1] transition-colors duration-500 ${
               document.documentElement.classList.contains('light') ? 'bg-white border-slate-200' : 'bg-slate-950 border-blue-500/40'
             }`}></div>
           </motion.div>

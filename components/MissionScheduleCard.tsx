@@ -1,7 +1,8 @@
 
-import React, { useMemo, useEffect, useRef } from 'react';
-import { Clock, User, Target, Zap, CheckCircle2 } from 'lucide-react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
+import { Clock, User, Target, Zap, CheckCircle2, Info } from 'lucide-react';
 import TacticalCard from './TacticalCard';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ScheduleEvent {
   met: number;
@@ -27,9 +28,19 @@ interface Props {
 const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
-  const [schedule, setSchedule] = React.useState<ScheduleEvent[]>([]);
-  const [metadata, setMetadata] = React.useState<{ lastUpdated?: string; launchTime?: string }>({});
-  const [loading, setLoading] = React.useState(true);
+  const [schedule, setSchedule] = useState<ScheduleEvent[]>([]);
+  const [metadata, setMetadata] = useState<{ lastUpdated?: string; launchTime?: string }>({});
+  const [loading, setLoading] = useState(true);
+  const [hoveredEvent, setHoveredEvent] = useState<number | null>(null);
+  const [tooltipSide, setTooltipSide] = useState<'left' | 'right'>('left');
+
+  const handleMouseEnter = (index: number, e: React.MouseEvent) => {
+    const parentRect = scrollRef.current?.getBoundingClientRect();
+    if (parentRect) {
+      setTooltipSide(parentRect.left < 320 ? 'right' : 'left');
+    }
+    setHoveredEvent(index);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,6 +101,7 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
       title="Mission Schedule"
       subtitle="Operational Timeline & Crew Activities"
       icon={<Clock className="w-3.5 h-3.5" />}
+      allowOverflow={true}
       footer={
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-4">
@@ -111,7 +123,7 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
         </div>
       }
     >
-      <div ref={scrollRef} className="h-full overflow-y-auto p-1 space-y-0.5 custom-scrollbar bg-black/10">
+      <div ref={scrollRef} className="h-full overflow-y-auto p-1 space-y-0.5 custom-scrollbar bg-black/10 relative">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full space-y-2 opacity-50">
             <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -130,7 +142,9 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
               <div
                 key={i}
                 ref={isActive ? activeRef : null}
-                className={`relative flex items-center p-1 rounded-lg transition-all duration-300 ${
+                onMouseEnter={(e) => handleMouseEnter(i, e)}
+                onMouseLeave={() => setHoveredEvent(null)}
+                className={`relative flex items-center p-1.5 rounded-lg transition-all duration-300 ${
                   isActive 
                     ? 'bg-blue-600/20 border border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.15)] scale-[1.01] z-10' 
                     : isPast 
@@ -176,9 +190,6 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
                           {event.summary}
                         </span>
                       )}
-                      {event.duration && (
-                        <span className="text-[6px] text-slate-500 font-bold uppercase tracking-widest">Duration: {Math.round(event.duration / 60)}m</span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -195,7 +206,97 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
                       <span className="text-[6px] text-blue-400 font-black uppercase tracking-tighter">Active</span>
                     </div>
                   )}
+                  <Info size={8} className="text-slate-600 hover:text-slate-400 cursor-help" />
                 </div>
+
+                {/* Hover Popup */}
+                <AnimatePresence>
+                  {hoveredEvent === i && (
+                    <motion.div
+                      initial={{ opacity: 0, x: tooltipSide === 'left' ? -10 : 10, scale: 0.95 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: tooltipSide === 'left' ? -10 : 10, scale: 0.95 }}
+                      className={`absolute ${tooltipSide === 'left' ? 'right-full mr-3' : 'left-full ml-3'} top-0 z-50 w-64 p-4 bg-slate-900/95 backdrop-blur-xl border border-blue-500/30 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] pointer-events-none overflow-hidden`}
+                    >
+                      {/* Tactical Accents */}
+                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-transparent opacity-50"></div>
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-transparent opacity-30"></div>
+
+                      <div className="flex flex-col space-y-3 relative z-10">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                          <div className={`px-2 py-0.5 rounded text-[7px] font-black uppercase tracking-widest border ${
+                            event.type === 'crew' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 
+                            event.type === 'milestone' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                            'bg-slate-500/10 border-slate-500/30 text-slate-400'
+                          }`}>
+                            {event.type}
+                          </div>
+                          <span className="text-[9px] text-slate-500 mono font-bold">{formatMET(event.met)}</span>
+                        </div>
+
+                        {/* Title */}
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-wider leading-tight border-b border-white/5 pb-2">
+                          {event.label}
+                        </h4>
+
+                        {/* Summary */}
+                        {event.summary && (
+                          <div className="space-y-1">
+                            <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest">Briefing // Summary</span>
+                            <p className="text-[9px] text-slate-300 leading-relaxed font-medium">
+                              {event.summary}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Metrics Grid */}
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5">
+                          {event.duration && (
+                            <div className="flex flex-col">
+                              <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Duration</span>
+                              <div className="flex items-center space-x-1">
+                                <Clock size={8} className="text-blue-400" />
+                                <span className="text-[9px] mono text-blue-300 font-bold">{Math.round(event.duration / 60)}m</span>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex flex-col items-end">
+                            <span className="text-[7px] text-slate-500 font-black uppercase tracking-widest mb-0.5">Status</span>
+                            <div className="flex items-center space-x-1">
+                              {isPast ? (
+                                <>
+                                  <CheckCircle2 size={8} className="text-emerald-500" />
+                                  <span className="text-[8px] text-emerald-500 font-black uppercase">Completed</span>
+                                </>
+                              ) : isActive ? (
+                                <>
+                                  <Zap size={8} className="text-blue-400 animate-pulse" />
+                                  <span className="text-[8px] text-blue-400 font-black uppercase">Active</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock size={8} className="text-slate-500" />
+                                  <span className="text-[8px] text-slate-500 font-black uppercase">Scheduled</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer ID */}
+                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                          <span className="text-[6px] text-slate-600 mono uppercase">Ref: SCHED_{Math.abs(event.met).toString(16).toUpperCase()}</span>
+                          <div className="flex space-x-0.5">
+                            {[1, 2, 3].map(dot => (
+                              <div key={dot} className="w-1 h-1 rounded-full bg-blue-500/20"></div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })

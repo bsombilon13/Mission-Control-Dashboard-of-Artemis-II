@@ -227,7 +227,7 @@ const ArtemisHUD: React.FC<Props> = ({ phase, elapsedSeconds, telemetry, hideCon
       {/* METRICS HUD */}
       <div className="absolute bottom-6 left-6 space-y-4 z-30 pointer-events-none scale-75 md:scale-90 origin-bottom-left">
         <MetricItem label="Trajectory Pitch" value={pitchAngle} unit="DEG" color="text-white" progress={pitchAngle/90} />
-        <MetricItem label="V-Speed" value={velocity} unit="KM/H" color="text-blue-400" progress={velocity/28000} />
+        <MetricItem label="Velocity" value={velocity} unit="KM/H" color="text-blue-400" progress={velocity/28000} />
         <MetricItem label="Radar Altitude" value={altitude} unit="KM" color="text-emerald-400" progress={altitude/400} />
       </div>
 

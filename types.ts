@@ -25,6 +25,9 @@ export interface TelemetryData {
   velocity: number;
   fuel: number;
   heartRate: number;
+  pitch?: number;
+  yaw?: number;
+  roll?: number;
   distanceFromEarth?: number;
   distanceFromMoon?: number;
   telemetryDate?: string;
