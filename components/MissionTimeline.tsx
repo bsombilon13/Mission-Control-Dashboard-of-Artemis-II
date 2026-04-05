@@ -12,12 +12,13 @@ interface Props {
 
 export const MISSION_EVENTS: TimelineEvent[] = [
   // --- EXHAUSTIVE PRE-LAUNCH SEQUENCE (L-49H 15M to Liftoff) ---
-  { offsetSeconds: -177300, phase: 'pre-launch', category: 'countdown', label: "L-49H 15M: Call to Stations", description: "The launch team arrives on their stations and the countdown begins." },
-  { offsetSeconds: -175500, phase: 'pre-launch', category: 'countdown', label: "Propulsion Prep Start", description: "LOX/LH2 system preparations for vehicle loading begins (L-48H 45M)." },
-  { offsetSeconds: -175200, phase: 'pre-launch', category: 'countdown', label: "L-48H 40M: Clock Start", description: "The countdown clock begins its initial run." },
-  { offsetSeconds: -171000, phase: 'pre-launch', category: 'countdown', label: "Sound Suppression Prep", description: "Fill the water tank for the sound suppression system (L-47H 30M)." },
-  { offsetSeconds: -160200, phase: 'pre-launch', category: 'countdown', label: "Orion Spacecraft Power-up", description: "The Orion spacecraft is powered up if not already powered at call to stations (L-44H 30M).", associatedModule: "Orion Crew Module" },
-  { offsetSeconds: -144000, phase: 'pre-launch', category: 'countdown', label: "ICPS Power-up", description: "The interim cryogenic propulsion stage (ICPS) is powered up (L-40H).", associatedModule: "ICPS" },
+  { offsetSeconds: -177300, phase: 'pre-launch', category: 'countdown', label: "L-49H 15M: Call to Stations", shortLabel: "Call to Stations", description: "The launch team arrives on their stations and the countdown begins." },
+  { offsetSeconds: -175500, phase: 'pre-launch', category: 'countdown', label: "Propulsion Prep Start", shortLabel: "Propulsion Prep", description: "LOX/LH2 system preparations for vehicle loading begins (L-48H 45M)." },
+  { offsetSeconds: -175200, phase: 'pre-launch', category: 'countdown', label: "L-48H 40M: Clock Start", shortLabel: "Clock Start", description: "The countdown clock begins its initial run." },
+  { offsetSeconds: -171000, phase: 'pre-launch', category: 'countdown', label: "Sound Suppression Prep", shortLabel: "Sound Prep", description: "Fill the water tank for the sound suppression system (L-47H 30M)." },
+  { offsetSeconds: -160200, phase: 'pre-launch', category: 'countdown', label: "Orion Spacecraft Power-up", shortLabel: "Orion Power-up", description: "The Orion spacecraft is powered up if not already powered at call to stations (L-44H 30M).", associatedModule: "Orion Crew Module" },
+  { offsetSeconds: -150000, phase: 'pre-launch', category: 'countdown', label: "Emergency Drill: Cancelled", shortLabel: "Emergency Drill", description: "The planned emergency evacuation drill has been cancelled due to weather conditions." },
+  { offsetSeconds: -144000, phase: 'pre-launch', category: 'countdown', label: "ICPS Power-up", shortLabel: "ICPS Power-up", description: "The interim cryogenic propulsion stage (ICPS) is powered up (L-40H).", associatedModule: "ICPS" },
   { offsetSeconds: -142200, phase: 'pre-launch', category: 'countdown', label: "Core Stage Power-up", description: "The core stage is powered up (L-39H 30M).", associatedModule: "SLS Core Stage" },
   { offsetSeconds: -139500, phase: 'pre-launch', category: 'countdown', label: "RS-25 Final Prep", description: "Final preparations of the four RS-25 engines (L-38H 45M).", associatedModule: "RS-25 Engines" },
   { offsetSeconds: -121500, phase: 'pre-launch', category: 'countdown', label: "ICPS Power-down", description: "The ICPS is powered down for pre-launch system cycling (L-33H 45M).", associatedModule: "ICPS" },
@@ -141,6 +142,7 @@ const MissionTimeline = React.forwardRef<MissionTimelineRef, Props>(({ elapsedSe
   const activeItemRef = useRef<HTMLDivElement>(null);
   const [hoveredEvent, setHoveredEvent] = useState<TimelineEvent | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
   const [hoverPos, setHoverPos] = useState<{ top: number, left: number } | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -278,7 +280,10 @@ const MissionTimeline = React.forwardRef<MissionTimelineRef, Props>(({ elapsedSe
                   ref={isActive ? activeItemRef : null}
                   onMouseEnter={(e) => handleMouseEnter(event, idx, e)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => scrollToEvent(idx)}
+                  onClick={() => {
+                    scrollToEvent(idx);
+                    setSelectedEvent(event);
+                  }}
                   className={`relative flex items-center transition-all duration-300 cursor-pointer ${
                     isActive 
                       ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-5 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' 
@@ -309,9 +314,13 @@ const MissionTimeline = React.forwardRef<MissionTimelineRef, Props>(({ elapsedSe
                                 ? (document.documentElement.classList.contains('light') ? 'text-slate-600' : 'text-slate-300') 
                                 : (document.documentElement.classList.contains('light') ? 'text-slate-400' : 'text-slate-500')
                           }`}>
-                            {event.label}
+                            {event.shortLabel || event.label}
                           </span>
-                          {isPast && (
+                          {event.description?.toLowerCase().includes('cancelled') ? (
+                            <span className="text-[7px] font-black bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded border border-red-500/20 uppercase tracking-widest">
+                              Cancelled
+                            </span>
+                          ) : isPast && (
                             <span className="text-[7px] font-black bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-widest">
                               Completed
                             </span>
@@ -362,7 +371,7 @@ const MissionTimeline = React.forwardRef<MissionTimelineRef, Props>(({ elapsedSe
 
       {/* Interactive Tooltip Portal-like Overlay */}
       <AnimatePresence>
-        {hoveredEvent && hoverPos && (
+        {hoveredEvent && hoverPos && !selectedEvent && (
           <motion.div
             initial={{ opacity: 0, x: 20, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -526,6 +535,165 @@ const MissionTimeline = React.forwardRef<MissionTimelineRef, Props>(({ elapsedSe
               document.documentElement.classList.contains('light') ? 'bg-white border-slate-200' : 'bg-slate-950 border-blue-500/40'
             }`}></div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Detailed Event Modal */}
+      <AnimatePresence>
+        {selectedEvent && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEvent(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className={`relative w-full max-w-lg border rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-colors duration-500 ${
+                document.documentElement.classList.contains('light') ? 'bg-white border-slate-200' : 'bg-slate-950 border-blue-500/30'
+              }`}
+            >
+              {/* Tactical Header */}
+              <div className="h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600"></div>
+              
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <Info className="text-blue-400 w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border tracking-widest ${getPhaseStyles(selectedEvent.phase)}`}>
+                          {selectedEvent.phase}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-bold mono">ID: {Math.abs(selectedEvent.offsetSeconds).toString(16).toUpperCase()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedEvent(null)}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-500 hover:text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h2 className={`text-2xl font-black uppercase tracking-tight mb-2 transition-colors duration-500 ${
+                      document.documentElement.classList.contains('light') ? 'text-slate-900' : 'text-white'
+                    }`}>
+                      {selectedEvent.label}
+                    </h2>
+                    <div className="flex items-center space-x-3 text-blue-400">
+                      <Clock size={14} />
+                      <span className="text-lg mono font-black tabular-nums">{formatTimeShort(selectedEvent.offsetSeconds)}</span>
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-xl transition-colors duration-500 ${
+                    document.documentElement.classList.contains('light') ? 'bg-slate-100' : 'bg-white/5'
+                  }`}>
+                    <p className={`text-sm leading-relaxed font-medium transition-colors duration-500 ${
+                      document.documentElement.classList.contains('light') ? 'text-slate-700' : 'text-slate-300'
+                    }`}>
+                      {selectedEvent.description}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <Layers size={12} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Category</span>
+                      </div>
+                      <div className={`px-3 py-2 rounded-lg border transition-colors duration-500 ${
+                        document.documentElement.classList.contains('light') ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-900 border-white/10 text-white'
+                      }`}>
+                        <span className="text-xs font-black uppercase mono">{selectedEvent.category || 'General'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <Target size={12} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Module</span>
+                      </div>
+                      <div className={`px-3 py-2 rounded-lg border transition-colors duration-500 ${
+                        document.documentElement.classList.contains('light') ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-900 border-white/10 text-white'
+                      }`}>
+                        <span className="text-xs font-black uppercase mono">{selectedEvent.associatedModule || 'Integrated Stack'}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center space-x-2 text-slate-500">
+                        <Activity size={12} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Status</span>
+                      </div>
+                      <div className={`px-3 py-2 rounded-lg border flex items-center space-x-2 transition-colors duration-500 ${
+                        document.documentElement.classList.contains('light') ? 'bg-slate-50 border-slate-200' : 'bg-slate-900 border-white/10'
+                      }`}>
+                        {selectedEvent.description?.toLowerCase().includes('cancelled') ? (
+                          <>
+                            <X size={14} className="text-red-500" />
+                            <span className="text-xs font-black uppercase text-red-500">Cancelled</span>
+                          </>
+                        ) : elapsedSeconds >= selectedEvent.offsetSeconds ? (
+                          <>
+                            <CheckCircle2 size={14} className="text-emerald-500" />
+                            <span className="text-xs font-black uppercase text-emerald-500">Executed</span>
+                          </>
+                        ) : (
+                          <>
+                            <Circle size={14} className="text-blue-500 animate-pulse" />
+                            <span className="text-xs font-black uppercase text-blue-500">Pending</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedEvent.estimatedDuration && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center space-x-2 text-slate-500">
+                          <Timer size={12} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Est. Duration</span>
+                        </div>
+                        <div className={`px-3 py-2 rounded-lg border transition-colors duration-500 ${
+                          document.documentElement.classList.contains('light') ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-900 border-white/10 text-white'
+                        }`}>
+                          <span className="text-xs font-black uppercase mono">{selectedEvent.estimatedDuration}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-8 flex space-x-3">
+                  <button
+                    onClick={() => setSelectedEvent(null)}
+                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    onClick={() => {
+                      scrollToTime(selectedEvent.offsetSeconds);
+                      setSelectedEvent(null);
+                    }}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                  >
+                    Sync View
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

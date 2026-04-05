@@ -10,6 +10,7 @@ export enum MissionPhase {
 
 export interface TimelineEvent {
   label: string;
+  shortLabel?: string;
   offsetSeconds: number; // Seconds relative to T-0
   endOffsetSeconds?: number;
   description?: string;
