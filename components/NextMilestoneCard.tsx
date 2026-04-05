@@ -41,7 +41,7 @@ const NextMilestoneCard: React.FC<Props> = ({ elapsedSeconds }) => {
   return (
     <TacticalCard
       title="Next Milestone"
-      subtitle={`SEQ_${Math.abs(Math.round(nextMilestone.offsetSeconds % 1000)).toString(16).toUpperCase()}`}
+      subtitle={nextMilestone.label}
       isCritical={isCritical}
       icon={<Target className="w-3.5 h-3.5" />}
       footer={
@@ -50,15 +50,15 @@ const NextMilestoneCard: React.FC<Props> = ({ elapsedSeconds }) => {
             <div className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-red-500 animate-ping' : 'bg-blue-500 animate-pulse'}`}></div>
             <span>T-GO STATUS: {isCritical ? 'CRITICAL' : 'NOMINAL'}</span>
           </div>
-          <span className="mono text-slate-600">ID: {Math.abs(nextMilestone.offsetSeconds).toString(16).toUpperCase()}</span>
+          <span className="mono text-slate-600">SEQ: {Math.abs(Math.round(nextMilestone.offsetSeconds % 1000)).toString(16).toUpperCase()}</span>
         </div>
       }
     >
       <div className="p-4 flex flex-col justify-center h-full">
-        <h3 className={`text-[11px] font-black uppercase truncate tracking-tight mb-1 leading-none transition-colors duration-500 ${
-          document.documentElement.classList.contains('light') ? 'text-slate-900' : 'text-white'
+        <h3 className={`text-[10px] font-black uppercase truncate tracking-[0.2em] mb-2 leading-none transition-colors duration-500 ${
+          document.documentElement.classList.contains('light') ? 'text-slate-500' : 'text-slate-400'
         }`}>
-          {nextMilestone.label}
+          Target Sequence
         </h3>
         
         <div className="flex items-baseline space-x-1.5">

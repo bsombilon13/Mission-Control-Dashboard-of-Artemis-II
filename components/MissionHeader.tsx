@@ -119,7 +119,24 @@ const MissionHeader: React.FC<Props> = ({
 }) => {
   const [displayPhase, setDisplayPhase] = useState(phase);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [centralTime, setCentralTime] = useState(new Date());
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCentralTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatCentralTime = (date: Date) => {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(date);
+  };
   const nextMilestone = useMemo(() => {
     return MISSION_EVENTS.find(m => m.offsetSeconds > elapsedSeconds);
   }, [elapsedSeconds]);
@@ -246,44 +263,59 @@ const MissionHeader: React.FC<Props> = ({
         </div>
 
         {/* Master Mission Clock */}
-        <div className="flex flex-col items-center w-full lg:w-auto">
-          <div className="flex items-center space-x-4 mb-1">
+        <div className="flex flex-col items-center w-full lg:w-auto group">
+          <div className="flex items-center space-x-4 mb-1.5">
             {isCritical ? (
-              <p className="text-[7px] sm:text-[8px] text-red-500 uppercase tracking-[0.3em] sm:tracking-[0.5em] font-black animate-pulse">
+              <p className="text-[8px] sm:text-[10px] text-red-500 uppercase tracking-[0.4em] sm:tracking-[0.6em] font-black animate-pulse">
                 Terminal Count Initiation
               </p>
             ) : (
-              <p className={`text-[7px] sm:text-[8px] uppercase tracking-[0.3em] sm:tracking-[0.5em] font-black transition-colors duration-500 ${
-                theme === 'dark' ? 'text-white/30' : 'text-slate-400'
-              }`}>
-                {isTMinus ? 'Countdown to Liftoff' : 'Mission Elapsed Time'}
-              </p>
+              <div className="flex items-center space-x-3">
+                <p className={`text-[8px] sm:text-[10px] uppercase tracking-[0.3em] sm:tracking-[0.5em] font-black transition-colors duration-500 ${
+                  theme === 'dark' ? 'text-white/40' : 'text-slate-500'
+                }`}>
+                  {isTMinus ? 'Countdown to Liftoff' : 'Mission Elapsed Time'}
+                </p>
+                <div className={`h-[1px] w-8 sm:w-12 transition-colors duration-500 ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'}`}></div>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest transition-colors duration-500 ${
+                    theme === 'dark' ? 'text-blue-400/60' : 'text-blue-600/60'
+                  }`}>CT:</span>
+                  <span className={`text-[10px] sm:text-[12px] font-bold mono tabular-nums transition-colors duration-500 ${
+                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                  }`}>
+                    {formatCentralTime(centralTime)}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
           
           <div 
-            className={`flex items-baseline font-black mono tracking-tighter tabular-nums transition-all duration-300 relative px-2 sm:px-4 py-0.5 sm:py-1 rounded-lg ${
+            className={`flex items-baseline font-black mono tracking-tighter tabular-nums transition-all duration-500 relative px-4 sm:px-8 py-1.5 sm:py-2.5 rounded-xl border-2 shadow-2xl ${
               isCritical 
-                ? 'bg-red-600/10 animate-[criticalGlow_0.5s_ease-in-out_infinite_alternate]' 
-                : ''
+                ? 'bg-red-600/10 border-red-500/50 animate-[criticalGlow_0.5s_ease-in-out_infinite_alternate]' 
+                : theme === 'dark' 
+                  ? 'bg-black/40 border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] group-hover:border-blue-500/30 group-hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]' 
+                  : 'bg-white border-slate-200 shadow-[0_10px_40px_rgba(0,0,0,0.05)] group-hover:border-blue-500/30 group-hover:shadow-[0_10px_40px_rgba(59,130,246,0.1)]'
             } ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}
           >
             {isCritical && (
-              <div className="absolute inset-0 rounded-lg border border-red-500/30 animate-[criticalBorderFlash_0.5s_step-end_infinite]"></div>
+              <div className="absolute inset-0 rounded-xl border-2 border-red-500/30 animate-[criticalBorderFlash_0.5s_step-end_infinite]"></div>
             )}
             
-            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-500' : theme === 'dark' ? 'opacity-40' : 'opacity-30'}`}>
+            <span className={`text-3xl sm:text-5xl font-black ${isCritical ? 'text-red-500' : theme === 'dark' ? 'text-blue-500/40' : 'text-blue-600/30'}`}>
               {isTMinus ? 'L-' : 'T+'}
             </span>
-            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-600' : ''}`}>{timeParts.d}</span>
-            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-600' : ''}`}>{timeParts.h}</span>
-            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-600' : ''}`}>{timeParts.m}</span>
-            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-2xl sm:text-4xl font-bold ${isCritical ? 'text-red-600' : ''}`}>{timeParts.s}</span>
-            <span className={`text-lg sm:text-xl mx-0.5 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
-            <span className={`text-xl sm:text-2xl font-bold ${isCritical ? 'text-red-400' : theme === 'dark' ? 'opacity-60' : 'opacity-50'}`}>{timeParts.ms}</span>
+            <span className={`text-3xl sm:text-5xl font-black ${isCritical ? 'text-red-600' : ''}`}>{timeParts.d}</span>
+            <span className={`text-xl sm:text-2xl mx-1 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-3xl sm:text-5xl font-black ${isCritical ? 'text-red-600' : ''}`}>{timeParts.h}</span>
+            <span className={`text-xl sm:text-2xl mx-1 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-3xl sm:text-5xl font-black ${isCritical ? 'text-red-600' : ''}`}>{timeParts.m}</span>
+            <span className={`text-xl sm:text-2xl mx-1 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-3xl sm:text-5xl font-black ${isCritical ? 'text-red-600' : ''}`}>{timeParts.s}</span>
+            <span className={`text-xl sm:text-2xl mx-1 ${isCritical ? 'text-red-400' : 'opacity-20'}`}>:</span>
+            <span className={`text-2xl sm:text-3xl font-black ${isCritical ? 'text-red-400' : theme === 'dark' ? 'text-white/60' : 'text-slate-500'}`}>{timeParts.ms}</span>
           </div>
         </div>
         

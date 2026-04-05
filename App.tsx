@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MissionPhase, TelemetryData } from './types';
 import MissionHeader from './components/MissionHeader';
-import MissionVisualFeeds from './components/MissionVisualFeeds';
 import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
+import OrionTelemetryCard from './components/OrionTelemetryCard';
 import ArowMonitor from './components/ArowMonitor';
 import MissionNotifications from './components/MissionNotifications';
 import SettingsPanel from './components/SettingsPanel';
@@ -418,9 +418,9 @@ const App: React.FC = () => {
             
             {/* LEFT COLUMN: PRIMARY MONITORING (Visuals & Telemetry) */}
             <div className="col-span-12 lg:col-span-7 flex flex-col space-y-3 min-h-0">
-              {/* Top Row of Left Column: Visual Feeds */}
+              {/* Top Row of Left Column: Orion Telemetry */}
               <div className="flex-[1.2] min-h-[280px] lg:min-h-0">
-                <MissionVisualFeeds videoIds={videoIds} />
+                <OrionTelemetryCard />
               </div>
               
               {/* Bottom Row of Left Column: Trajectory Uplinks */}

@@ -232,16 +232,20 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                   <div className="relative flex items-center justify-center shrink-0">
                     {isActive && <div className="absolute rounded-full bg-blue-500/30 animate-ping w-12 h-12"></div>}
                     <div className={`relative z-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                      isActive ? 'w-7 h-7 bg-blue-500 border-white shadow-[0_0_20px_rgba(59,130,246,0.8)]' : isPast ? 'w-3 h-3 bg-emerald-500 border-emerald-300' : 'w-3 h-3 bg-slate-800 border-slate-600'
+                      isActive ? 'w-7 h-7 bg-blue-500 border-white shadow-[0_0_20px_rgba(59,130,246,0.8)]' : isPast ? 'w-5 h-5 bg-emerald-500/20 border-emerald-500/50' : 'w-3 h-3 bg-slate-800 border-slate-600'
                     }`}>
-                      {isActive && <div className="w-2.5 h-2.5 bg-white rounded-full shadow-inner"></div>}
+                      {isActive ? (
+                        <div className="w-2.5 h-2.5 bg-white rounded-full shadow-inner"></div>
+                      ) : isPast ? (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                      ) : null}
                     </div>
                   </div>
 
                   <div className={`${isCompressed ? 'ml-3' : 'ml-6'} flex-1 overflow-hidden`}>
                     <div className="flex flex-col">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex flex-col truncate">
+                        <div className="flex flex-row items-center gap-2 truncate">
                           <span className={`font-black transition-colors truncate uppercase tracking-tight ${isCompressed ? 'text-[10px]' : 'text-[12px]'} ${
                             isActive 
                               ? (document.documentElement.classList.contains('light') ? 'text-blue-700' : 'text-white') 
@@ -251,6 +255,12 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                           }`}>
                             {event.label}
                           </span>
+                          {isPast && (
+                            <span className="text-[7px] font-black bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-widest">
+                              Completed
+                            </span>
+                          )}
+                        </div>
                           {!isCompressed && event.phase && (
                             <div className="flex items-center space-x-2 mt-0.5">
                               <span className={`text-[7px] font-black uppercase tracking-widest ${getPhaseStyles(event.phase).split(' ')[0]}`}>{event.phase}</span>
@@ -281,7 +291,6 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                       )}
                     </div>
                   </div>
-                </div>
               );
             })}
           </div>
