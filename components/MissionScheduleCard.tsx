@@ -1,6 +1,6 @@
 
 import React, { useMemo, useEffect, useRef, useState } from 'react';
-import { Clock, User, Target, Zap, CheckCircle2, Info } from 'lucide-react';
+import { Clock, User, Target, Zap, CheckCircle2, Info, MapPin } from 'lucide-react';
 import TacticalCard from './TacticalCard';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -23,9 +23,10 @@ const formatMET = (seconds: number) => {
 
 interface Props {
   elapsedSeconds: number;
+  onGoToEvent?: (met: number) => void;
 }
 
-const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
+const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds, onGoToEvent }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
   const [schedule, setSchedule] = useState<ScheduleEvent[]>([]);
@@ -216,7 +217,9 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
                       initial={{ opacity: 0, x: tooltipSide === 'left' ? -10 : 10, scale: 0.95 }}
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: tooltipSide === 'left' ? -10 : 10, scale: 0.95 }}
-                      className={`absolute ${tooltipSide === 'left' ? 'right-full mr-3' : 'left-full ml-3'} top-0 z-50 w-64 p-4 bg-slate-900/95 backdrop-blur-xl border border-blue-500/30 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] pointer-events-none overflow-hidden`}
+                      className={`absolute ${tooltipSide === 'left' ? 'right-full mr-3' : 'left-full ml-3'} top-0 z-50 w-64 p-4 bg-slate-900/95 backdrop-blur-xl border border-blue-500/30 rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden`}
+                      onMouseEnter={() => setHoveredEvent(i)}
+                      onMouseLeave={() => setHoveredEvent(null)}
                     >
                       {/* Tactical Accents */}
                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-transparent opacity-50"></div>
@@ -285,12 +288,26 @@ const MissionScheduleCard: React.FC<Props> = ({ elapsedSeconds }) => {
                         </div>
 
                         {/* Footer ID */}
-                        <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                          <span className="text-[6px] text-slate-600 mono uppercase">Ref: SCHED_{Math.abs(event.met).toString(16).toUpperCase()}</span>
-                          <div className="flex space-x-0.5">
-                            {[1, 2, 3].map(dot => (
-                              <div key={dot} className="w-1 h-1 rounded-full bg-blue-500/20"></div>
-                            ))}
+                        <div className="flex flex-col space-y-3 pt-2 border-t border-white/5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onGoToEvent?.(event.met);
+                              setHoveredEvent(null);
+                            }}
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] active:scale-95 flex items-center justify-center space-x-2 group/btn"
+                          >
+                            <MapPin size={10} className="group-hover/btn:animate-bounce" />
+                            <span>Go to Event</span>
+                          </button>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-[6px] text-slate-600 mono uppercase">Ref: SCHED_{Math.abs(event.met).toString(16).toUpperCase()}</span>
+                            <div className="flex space-x-0.5">
+                              {[1, 2, 3].map(dot => (
+                                <div key={dot} className="w-1 h-1 rounded-full bg-blue-500/20"></div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>

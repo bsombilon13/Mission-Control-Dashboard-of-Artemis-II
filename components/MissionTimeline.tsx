@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import TacticalCard from './TacticalCard';
 import { TimelineEvent } from '../types';
-import { Info, Clock, Activity, CheckCircle2, Circle, Tag, Box, Target, Layers } from 'lucide-react';
+import { Info, Clock, Activity, CheckCircle2, Circle, Tag, Box, Target, Layers, X, Timer, MapPin } from 'lucide-react';
 
 interface Props {
   elapsedSeconds: number;
@@ -31,15 +31,15 @@ export const MISSION_EVENTS: TimelineEvent[] = [
   { offsetSeconds: -42000, phase: 'pre-launch', category: 'countdown', label: "L-11H 40M: Weather Brief", description: "Launch team conducts a weather and tanking briefing." },
   { offsetSeconds: -41700, phase: 'pre-launch', category: 'countdown', label: "Hold (L-11H 35M)", description: "2-hour 15-minute built-in countdown hold begins." },
   { offsetSeconds: -37200, phase: 'pre-launch', category: 'countdown', label: "L-10H 20M: Tanking Go Poll", description: "Launch team decides if they are “go” or “no-go” to begin tanking." },
-  { offsetSeconds: -37200, phase: 'pre-launch', category: 'countdown', label: "Orion Cold Soak", description: "Orion spacecraft cold soak sequence (L-10H 20M)." },
-  { offsetSeconds: -36600, phase: 'pre-launch', category: 'countdown', label: "Core LOX Chilldown", description: "Core stage LOX transfer line chilldown (L-10H 10M)." },
-  { offsetSeconds: -36600, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Chilldown", description: "Core stage LH2 chilldown (L-10H 10M)." },
+  { offsetSeconds: -37200, phase: 'pre-launch', category: 'countdown', label: "Orion Cold Soak", description: "Orion spacecraft cold soak sequence (L-10H 20M).", associatedModule: "Orion Crew Module", estimatedDuration: "10m" },
+  { offsetSeconds: -36600, phase: 'pre-launch', category: 'countdown', label: "Core LOX Chilldown", description: "Core stage LOX transfer line chilldown (L-10H 10M).", associatedModule: "SLS Core Stage", estimatedDuration: "20m" },
+  { offsetSeconds: -36600, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Chilldown", description: "Core stage LH2 chilldown (L-10H 10M).", associatedModule: "SLS Core Stage", estimatedDuration: "20m" },
   { offsetSeconds: -35400, phase: 'pre-launch', category: 'countdown', label: "Core LOX MPS Chilldown", description: "Core stage LOX main propulsion system chilldown (L-9H 50M)." },
   { offsetSeconds: -33900, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Slow Fill", description: "Core stage LH2 slow fill start (L-9H 25M)." },
   { offsetSeconds: -33600, phase: 'pre-launch', category: 'countdown', label: "Resume T-Clock", description: "Resume T-Clock from T-8H 10M (L-9H 20M)." },
   { offsetSeconds: -33000, phase: 'pre-launch', category: 'countdown', label: "Core LOX Slow Fill", description: "Core stage LOX slow fill start (L-9H 10M)." },
-  { offsetSeconds: -32400, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Fast Fill", description: "Core stage LH2 fast fill (L-9H)." },
-  { offsetSeconds: -32100, phase: 'pre-launch', category: 'countdown', label: "Core LOX Fast Fill", description: "Core stage LOX fast fill (L-8H 55M)." },
+  { offsetSeconds: -32400, phase: 'pre-launch', category: 'countdown', label: "Core LH2 Fast Fill", description: "Core stage LH2 fast fill (L-9H).", associatedModule: "SLS Core Stage", estimatedDuration: "4h" },
+  { offsetSeconds: -32100, phase: 'pre-launch', category: 'countdown', label: "Core LOX Fast Fill", description: "Core stage LOX fast fill (L-8H 55M).", associatedModule: "SLS Core Stage", estimatedDuration: "3h" },
   { offsetSeconds: -31500, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Chilldown", description: "ICPS LH2 chilldown (L-8H 45M)." },
   { offsetSeconds: -31200, phase: 'pre-launch', category: 'countdown', label: "L-8H 40M: Crew Wake-up", description: "Flight crew wake up and launch countdown status check." },
   { offsetSeconds: -29400, phase: 'pre-launch', category: 'countdown', label: "ICPS LH2 Fast Fill", description: "ICPS LH2 fast fill start (L-8H 10M)." },
@@ -64,7 +64,7 @@ export const MISSION_EVENTS: TimelineEvent[] = [
   { offsetSeconds: -15900, phase: 'pre-launch', category: 'countdown', label: "Orion Ingress Prep", description: "Orion preps for flight crew ingress (L-4H 25M)." },
   { offsetSeconds: -15200, phase: 'pre-launch', category: 'countdown', label: "White Room Access", description: "Flight crew heads to white room (L-4H 20M)." },
   { offsetSeconds: -15000, phase: 'pre-launch', category: 'countdown', label: "Helmets/Gloves Donning", description: "Flight crew puts on helmets and gloves (L-4H 10M)." },
-  { offsetSeconds: -14400, phase: 'pre-launch', category: 'countdown', label: "L-4H: Crew Ingress", description: "Flight crew ingress, communication checks and suit leak checks." },
+  { offsetSeconds: -14400, phase: 'pre-launch', category: 'countdown', label: "L-4H: Crew Ingress", description: "Flight crew ingress, communication checks and suit leak checks.", associatedModule: "Orion Crew Module", estimatedDuration: "2h" },
   { offsetSeconds: -12300, phase: 'pre-launch', category: 'countdown', label: "White Room Closeout", description: "White room closeout complete (L-3H 25M)." },
   { offsetSeconds: -12000, phase: 'pre-launch', category: 'countdown', label: "Hatch Closure", description: "Crew module hatch preps and closure (L-3H 20M)." },
   { offsetSeconds: -11700, phase: 'pre-launch', category: 'countdown', label: "Hatch Seal Checks", description: "Counterbalance mechanism hatch seal press decay checks (L-3H 15M)." },
@@ -131,7 +131,12 @@ const formatTimeShort = (seconds: number) => {
   return `${prefix}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
+export interface MissionTimelineRef {
+  scrollToEvent: (index: number) => void;
+  scrollToTime: (seconds: number) => void;
+}
+
+const MissionTimeline = React.forwardRef<MissionTimelineRef, Props>(({ elapsedSeconds, isCompressed }, ref) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
   const [hoveredEvent, setHoveredEvent] = useState<TimelineEvent | null>(null);
@@ -160,6 +165,26 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
       });
     }
   };
+
+  const scrollToTime = (seconds: number) => {
+    let closestIdx = 0;
+    let minDiff = Infinity;
+    
+    MISSION_EVENTS.forEach((event, idx) => {
+      const diff = Math.abs(event.offsetSeconds - seconds);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = idx;
+      }
+    });
+    
+    scrollToEvent(closestIdx);
+  };
+
+  React.useImperativeHandle(ref, () => ({
+    scrollToEvent,
+    scrollToTime
+  }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -253,7 +278,8 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                   ref={isActive ? activeItemRef : null}
                   onMouseEnter={(e) => handleMouseEnter(event, idx, e)}
                   onMouseLeave={handleMouseLeave}
-                  className={`relative flex items-center transition-all duration-300 cursor-help ${
+                  onClick={() => scrollToEvent(idx)}
+                  className={`relative flex items-center transition-all duration-300 cursor-pointer ${
                     isActive 
                       ? 'bg-blue-600/20 border-y border-blue-500/30 z-20 py-5 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]' 
                       : `py-1.5 opacity-60 hover:opacity-100 ${document.documentElement.classList.contains('light') ? 'hover:bg-slate-200/50' : 'hover:bg-white/5'}`
@@ -375,9 +401,22 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                     {hoveredEvent.phase}
                   </span>
                 </div>
-                <div className="flex items-center space-x-1 text-blue-400">
-                  <Clock size={10} />
-                  <span className="text-[10px] mono font-black tabular-nums">{formatTimeShort(hoveredEvent.offsetSeconds)}</span>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-1 text-blue-400">
+                    <Clock size={10} />
+                    <span className="text-[10px] mono font-black tabular-nums">{formatTimeShort(hoveredEvent.offsetSeconds)}</span>
+                  </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHoveredEvent(null);
+                      setHoveredIndex(null);
+                      setHoverPos(null);
+                    }}
+                    className="p-1 hover:bg-white/10 rounded-full transition-colors text-slate-500 hover:text-white"
+                  >
+                    <X size={12} />
+                  </button>
                 </div>
               </div>
 
@@ -447,14 +486,34 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
                       </span>
                     </div>
                   </div>
+
+                  {hoveredEvent.estimatedDuration && (
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-1 text-slate-500">
+                        <Timer size={8} />
+                        <span className="text-[7px] font-bold uppercase tracking-widest">Est. Duration</span>
+                      </div>
+                      <span className="text-[9px] mono text-blue-400 font-bold">
+                        {hoveredEvent.estimatedDuration}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Go to Event Button */}
                 <button
-                  onClick={() => hoveredIndex !== null && scrollToEvent(hoveredIndex)}
-                  className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] active:scale-95 pointer-events-auto"
+                  onClick={() => {
+                    if (hoveredIndex !== null) {
+                      scrollToEvent(hoveredIndex);
+                      setHoveredEvent(null);
+                      setHoveredIndex(null);
+                      setHoverPos(null);
+                    }
+                  }}
+                  className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-[0.25em] rounded-lg transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 pointer-events-auto flex items-center justify-center space-x-2 group/btn"
                 >
-                  Go to Event
+                  <MapPin size={10} className="group-hover/btn:animate-bounce" />
+                  <span>Go to Event</span>
                 </button>
               </div>
 
@@ -476,6 +535,6 @@ const MissionTimeline: React.FC<Props> = ({ elapsedSeconds, isCompressed }) => {
       `}</style>
     </TacticalCard>
   );
-};
+});
 
 export default MissionTimeline;

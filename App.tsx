@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { MissionPhase, TelemetryData } from './types';
 import MissionHeader from './components/MissionHeader';
-import MissionTimeline, { MISSION_EVENTS } from './components/MissionTimeline';
+import MissionTimeline, { MISSION_EVENTS, MissionTimelineRef } from './components/MissionTimeline';
 import OrionTelemetryCard from './components/OrionTelemetryCard';
 import OrionAttitudeCard from './components/OrionAttitudeCard';
 import ArowMonitor from './components/ArowMonitor';
@@ -101,6 +101,7 @@ const App: React.FC = () => {
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const timelineRef = useRef<MissionTimelineRef>(null);
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -162,7 +163,66 @@ const App: React.FC = () => {
   const [currentMs, setCurrentMs] = useState<number>(Date.now());
   const [telemetryHistory, setTelemetryHistory] = useState<TelemetryData[]>([]);
   const [liveTelemetry, setLiveTelemetry] = useState<TelemetryData | null>(null);
+  const [telemetryStatus, setTelemetryStatus] = useState<'connected' | 'connecting' | 'error'>('connecting');
+  const [lastTelemetryUpdate, setLastTelemetryUpdate] = useState<number | null>(null);
+  const esRef = useRef<EventSource | null>(null);
   
+  const connectSSE = useCallback(() => {
+    if (esRef.current) {
+      esRef.current.close();
+    }
+    
+    setTelemetryStatus('connecting');
+    const es = new EventSource(SSE_URL);
+    esRef.current = es;
+    
+    es.onopen = () => {
+      setTelemetryStatus('connected');
+    };
+    
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setLiveTelemetry({
+          timestamp: Date.now(),
+          altitude: data.altitude || 0,
+          velocity: data.velocity || 0,
+          fuel: data.fuel || 0,
+          heartRate: data.heartRate || 72,
+          pitch: data.pitch,
+          yaw: data.yaw,
+          roll: data.roll,
+          distanceFromEarth: data.distanceFromEarth,
+          distanceFromMoon: data.distanceFromMoon,
+          telemetryDate: data.telemetryDate,
+        });
+        setLastTelemetryUpdate(Date.now());
+        setTelemetryStatus('connected');
+      } catch (err) {
+        console.error('Error parsing telemetry data:', err);
+      }
+    };
+
+    es.onerror = (err) => {
+      console.error('SSE Error:', err);
+      setTelemetryStatus('error');
+      es.close();
+      // Auto-reconnect after 10s
+      setTimeout(connectSSE, 10000);
+    };
+
+    return es;
+  }, []);
+
+  useEffect(() => {
+    const es = connectSSE();
+    return () => es.close();
+  }, [connectSSE]);
+
+  const handleRefreshTelemetry = () => {
+    connectSSE();
+  };
+
   const elapsedSeconds = useMemo(() => {
     return (currentMs - launchDate.getTime()) / 1000;
   }, [currentMs, launchDate]);
@@ -257,25 +317,49 @@ const App: React.FC = () => {
     
     // Simulate Earth and Moon distances
     // Earth-Moon distance is ~384,400 km
-    // Mission progresses from Earth to Moon and back
     let distEarth = 0;
     let distMoon = 384400;
     
     if (t > 0) {
       if (t < 486) {
-        distEarth = alt; 
+        // Ascent
+        distEarth = alt;
+      } else if (t < 92220) {
+        // Earth Orbit
+        distEarth = alt;
+      } else if (t < 436980) {
+        // Transit to Moon (Lunar Flyby Phase)
+        const transitProgress = (t - 92220) / (436980 - 92220);
+        distEarth = 400 + transitProgress * 384000;
+      } else if (t < 786780) {
+        // Return to Earth
+        const returnProgress = (t - 436980) / (786780 - 436980);
+        distEarth = 384400 - (returnProgress * 384000);
       } else {
-        const transitProgress = Math.min(1, (t - 486) / 259200);
-        distEarth = 200 + transitProgress * 384200;
+        // Splashdown
+        distEarth = 0;
       }
       distMoon = Math.max(0, 384400 - distEarth);
     }
 
     if (liveTelemetry) {
+      // Robust parsing for live telemetry distances
+      // Fallback to simulation if live data is missing, NaN, or 0 when we expect a distance
+      const parseDist = (val: any, fallback: number) => {
+        const n = Number(val);
+        if (isNaN(n) || val === null || val === undefined || (n === 0 && fallback > 5000)) {
+          return fallback;
+        }
+        return n;
+      };
+
+      const liveEarth = parseDist(liveTelemetry.distanceFromEarth, distEarth);
+      const liveMoon = parseDist(liveTelemetry.distanceFromMoon, distMoon);
+
       return {
         ...liveTelemetry,
-        distanceFromEarth: Number(liveTelemetry.distanceFromEarth ?? distEarth),
-        distanceFromMoon: Number(liveTelemetry.distanceFromMoon ?? Math.max(0, distMoon))
+        distanceFromEarth: liveEarth,
+        distanceFromMoon: liveMoon
       };
     }
     
@@ -283,13 +367,13 @@ const App: React.FC = () => {
       timestamp: Date.now(), 
       altitude: alt, 
       velocity: vel, 
-      fuel: Math.max(0, 100 - (t / 100)), 
+      fuel: Math.max(0, 100 - (t / 10000)), // Slower fuel consumption
       heartRate: 70 + Math.random() * 5,
       pitch,
       yaw,
       roll,
-      distanceFromEarth: Number(distEarth),
-      distanceFromMoon: Number(Math.max(0, distMoon))
+      distanceFromEarth: distEarth,
+      distanceFromMoon: distMoon
     };
   }, [elapsedSeconds, liveTelemetry]);
 
@@ -321,53 +405,15 @@ const App: React.FC = () => {
     return () => clearInterval(timer);
   }, [launchDate, phase]);
 
+  const currentTelemetryRef = useRef(telemetry);
   useEffect(() => {
-    const connectSSE = () => {
-      const es = new EventSource(SSE_URL);
-      
-      es.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          setLiveTelemetry({
-            timestamp: Date.now(),
-            altitude: data.altitude || 0,
-            velocity: data.velocity || 0,
-            fuel: data.fuel || 0,
-            heartRate: data.heartRate || 72,
-            pitch: data.pitch,
-            yaw: data.yaw,
-            roll: data.roll,
-            distanceFromEarth: data.distanceFromEarth,
-            distanceFromMoon: data.distanceFromMoon,
-            telemetryDate: data.telemetryDate,
-          });
-        } catch (err) {
-          console.error('Error parsing telemetry data:', err);
-        }
-      };
-
-      es.onerror = (err) => {
-        console.error('SSE Error:', err);
-        es.close();
-        setTimeout(connectSSE, 5000);
-      };
-
-      return es;
-    };
-
-    const es = connectSSE();
-    return () => es.close();
-  }, []);
-
-  const telemetryRef = useRef(telemetry);
-  useEffect(() => {
-    telemetryRef.current = telemetry;
+    currentTelemetryRef.current = telemetry;
   }, [telemetry]);
 
   useEffect(() => {
     const historyTimer = setInterval(() => {
       setTelemetryHistory(prev => {
-        const next = [...prev, telemetryRef.current];
+        const next = [...prev, currentTelemetryRef.current];
         return next.length > HISTORY_LIMIT ? next.slice(1) : next;
       });
     }, 1000);
@@ -502,7 +548,12 @@ const App: React.FC = () => {
             <div className="col-span-12 lg:col-span-7 flex flex-col space-y-3 min-h-0">
               {/* Top Row of Left Column: Orion Telemetry & Attitude */}
               <div className="flex-[1.2] min-h-[280px] lg:min-h-0 grid grid-cols-1 md:grid-cols-2 gap-3">
-                <OrionTelemetryCard telemetryHistory={telemetryHistory} />
+                <OrionTelemetryCard 
+                  telemetryHistory={telemetryHistory} 
+                  status={telemetryStatus}
+                  lastUpdate={lastTelemetryUpdate}
+                  onRefresh={handleRefreshTelemetry}
+                />
                 <OrionAttitudeCard telemetryHistory={telemetryHistory} />
               </div>
               
@@ -546,12 +597,15 @@ const App: React.FC = () => {
                   key={`timeline-transition-${displayPhase}`}
                   className={`h-full min-h-0 ${isPhaseTransitioning ? 'animate-phase-out' : 'animate-phase-in'}`}
                 >
-                  <MissionTimeline elapsedSeconds={elapsedSeconds} />
+                  <MissionTimeline ref={timelineRef} elapsedSeconds={elapsedSeconds} />
                 </div>
 
                 {/* Mission Schedule */}
                 <div className="h-full min-h-0">
-                  <MissionScheduleCard elapsedSeconds={elapsedSeconds} />
+                  <MissionScheduleCard 
+                    elapsedSeconds={elapsedSeconds} 
+                    onGoToEvent={(met) => timelineRef.current?.scrollToTime(met)}
+                  />
                 </div>
               </div>
             </div>
